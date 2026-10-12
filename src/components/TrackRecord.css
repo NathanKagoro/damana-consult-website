@@ -1,0 +1,79 @@
+.track-record {
+  padding: var(--space-xl) 0 var(--space-lg);
+  background: var(--navy-mid);
+  position: relative;
+  overflow: hidden;
+}
+.track-record::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(201,168,76,0.35), transparent);
+}
+.track-record__heading {
+  font-size: clamp(2rem, 3.5vw, 3rem);
+  margin: 0.5rem 0 0.4rem;
+}
+.track-record__sub {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  margin-bottom: var(--space-md);
+  max-width: 500px;
+}
+.track-record__track {
+  padding-left: calc((100vw - 1200px) / 2);
+  padding-right: calc((100vw - 1200px) / 2);
+}
+@media (max-width: 1260px) {
+  .track-record__track {
+    padding-left: var(--space-md);
+    padding-right: var(--space-md);
+  }
+}
+.track-record__card {
+  width: 280px;
+  min-height: 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.track-record__card-sector {
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+.track-record__card-year {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+.track-record__card-frame {
+  display: inline-block;
+  margin: 0.3rem 0;
+}
+.track-record__card-client {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--off-white);
+  padding: 0.35rem 0.6rem;
+  white-space: nowrap;
+}
+.track-record__card-scope {
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: var(--text-muted);
+  flex: 1;
+}
+.track-record__scroll-hint {
+  text-align: center;
+  margin-top: var(--space-sm);
+  font-size: 0.68rem;
+  letter-spacing: 0.15em;
+  color: var(--gold-dark);
+  text-transform: uppercase;
+}
