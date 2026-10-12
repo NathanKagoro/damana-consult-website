@@ -24,3 +24,5 @@
   fill: #4E3B0C;
   filter: drop-shadow(0.6px 0.8px 0 rgba(255, 246, 208, 0.8));
 }
+/* Letters on the inside of a curve crowd together, so the foot line is opened up. */
+.seal__text--foot { font-size: 14px; letter-spacing: 4.5px; }

@@ -1,105 +1,118 @@
-# Damana Consult Ltd — Company Website
+# Damana Consult Ltd website
 
-Official website for **Damana Consult Ltd**, a Tanzanian management consulting and professional services firm based in Dar es Salaam. The site presents the company's experience, sisal operations, services, and contact information.
+The website of Damana Consult Ltd, a management consulting and audit firm in Dar es Salaam, Tanzania, which also grows and processes sisal. It is a single page: who the firm is, a register of past engagements, its sisal operations, its services, and how to reach it.
 
-Live site: [damanaconsult.com](https://damanaconsult.com)
+- Production site: [damanaconsultant.com](https://damanaconsultant.com)
+- Preview of this repository: [nathankagoro.github.io/damana-consult-website](https://nathankagoro.github.io/damana-consult-website/) (GitHub Pages, built from `main`)
 
----
+The preview is a copy for review. Nothing in this repository deploys to the firm's own domain.
 
-## Tech Stack
+## What is real
 
-| Tool | Purpose |
-|------|---------|
-| [React](https://react.dev) | UI component framework |
-| [Vite](https://vitejs.dev) | Build tool and dev server |
-| CSS Modules (plain CSS per component) | Scoped styling |
-| [Lucide React](https://lucide.dev) | Service section icons |
-| [Netlify](https://netlify.com) | Hosting and deployment |
+Everything the page says about the firm is the firm's own: its name and logo, the figures (20+ years, 300+ engagements, 8 sectors, 15+ staff), the credentials, the eight engagements in the ledger, the services, the three photographs of its sisal operations, the phone numbers, the email address and the office address. None of it is placeholder or sample content.
 
----
+What was made for the design, and carries no claim: the guilloche borders, rosettes, gold seal, ledger ruling, woven sisal texture and the eight small service glyphs. The seal is an ornament drawn for this page, not a reproduction of the company's registered seal.
 
-## Project Structure
+## The design
+
+The page is set as an engraved share certificate and an audit ledger, in the firm's navy and gold.
+
+- The opening screen is a certificate on bond paper with a guilloche border, a vignette of the plantation and a gold wafer seal.
+- The four headline figures sit in lathe-work counters, as a denomination does on a banknote.
+- Past engagements are lines in a ledger, with the year in the margin left of the red rule. It is a plain vertical register, so there is nothing to scroll sideways.
+- The sisal section sits on a woven sisal texture.
+- The footer is the counterfoil, with a row of perforations along its top.
+
+Nothing moves on its own. Content is visible as soon as it is painted; there are no scroll-triggered reveals. `prefers-reduced-motion` switches off the few hover transitions and smooth scrolling.
+
+All line-work is drawn by a script, not by hand: `scripts/engrave.mjs` writes the SVG files in `src/assets/engraving/` from a few lines of trigonometry (a wavy ring, repeated with a small rotation until the copies interlace).
+
+## Stack
+
+| Tool | Use |
+| --- | --- |
+| React 19 | Components. The only state is whether the small-screen menu is open. |
+| Vite 8 | Build and dev server |
+| Plain CSS, one file per component | Styling |
+| Node's built-in test runner | Checks on the built site |
+
+No icon library, CSS framework or web-font service is loaded. Fonts (Bodoni Moda, Old Standard TT, Pinyon Script, all under the SIL Open Font License) are self-hosted WOFF2 subsets.
+
+The build renders the page to HTML ahead of time (`scripts/prerender.mjs`), so the content is in `index.html` and does not wait for JavaScript. React then attaches the menu behaviour.
+
+## Layout of the repository
 
 ```
+index.html                    head, meta tags, link-preview tags
+vite.config.js                base path and site URL from the environment
+public/                       favicon, touch icon, og.jpg (link-preview image)
 src/
-  App.jsx                     # Root component — assembles all page sections
-  main.jsx                    # React entry point
-  components/
-    Navbar.jsx / .css          # Sticky nav with scroll-aware background + mobile burger menu
-    Hero.jsx / .css            # Full-screen background hero with gold frame headline
-    ExperienceSection.jsx/.css # Stats grid + credentials list with scroll-reveal
-    TrackRecord.jsx / .css     # Horizontally scrolling project cards carousel
-    SisalFocusSection.jsx/.css # Two-panel sisal cultivation & processing section
-    ServicesSection.jsx / .css # 8-service icon grid
-    ContactCta.jsx / .css      # Contact section with phone and email links
-    Footer.jsx / .css          # Footer with brand, nav links, and copyright
-    GoldFrame.jsx / .css       # Reusable decorative gold corner-bracket wrapper
-  styles/
-    global.css                 # CSS reset, base typography, utility classes
-    tokens.css                 # Design tokens — colours, spacing, font scales
-    sculpted.css               # Shared sculpted-panel dark background style
-public/
-  plantation-overview.jpg      # Hero background image
-  hillside-plantation.jpg      # Sisal cultivation panel image
-  fiber-drying.jpg             # Sisal processing panel image
-  logo.svg                     # Damana Consult logo
+  App.jsx, main.jsx           page assembly and entry point
+  entry-server.jsx            entry used to render the page at build time
+  components/                 Navbar, Hero, Seal, ExperienceSection, TrackRecord (the ledger),
+                              SisalFocusSection, ServicesSection, Glyph, ContactCta, Footer
+  styles/global.css           fonts, colours, paper and certificate surfaces, lettering
+  assets/engraving/           generated SVG: frame, rosettes, line-work, weave
+  assets/photos/              WebP photographs at 480 and 960 px
+  assets/fonts/               subsetted WOFF2
+  assets/logo.svg             the firm's logo
+scripts/
+  engrave.mjs                 draws the engraving SVGs
+  assets.mjs                  makes the WebP photos, favicons and font subsets
+  prerender.mjs               writes the rendered page and 404.html into dist/
+  screenshots.mjs             photographs the built page at 1440, 390 and 360 px
+  og.mjs                      makes public/og.jpg from the built page
+tests/build.test.mjs          checks on the built site
 ```
 
----
+## Run, build, test
 
-## Getting Started
-
-### Prerequisites
-- Node.js 18+
-- npm
-
-### Install & run locally
+Needs Node 20 or newer.
 
 ```bash
 npm install
-npm run dev
+npm run dev          # dev server at http://localhost:5173
+npm run build        # production build in dist/
+npm test             # 7 checks on what is in dist/
+npm run preview      # serve dist/ locally
 ```
 
-The dev server starts at `http://localhost:5173` with hot module replacement.
+The site can be served from the root of a domain or from a subfolder. Two environment variables control this at build time:
 
-### Build for production
+| Variable | Default | Meaning |
+| --- | --- | --- |
+| `BASE_PATH` | `/` | Folder the site is served from |
+| `SITE_URL` | `https://damanaconsultant.com/` | Public address, used for the link-preview image URL |
+
+To build and check it exactly as GitHub Pages serves it:
 
 ```bash
-npm run build
+BASE_PATH=/damana-consult-website/ SITE_URL=https://nathankagoro.github.io/damana-consult-website/ npm run build
+BASE_PATH=/damana-consult-website/ npm test
+BASE_PATH=/damana-consult-website/ npm run screenshots   # needs Chrome; writes shots/
 ```
 
-Output is written to `dist/`. Netlify picks this up automatically on every push to `main`.
+In Git Bash on Windows, prefix those with `MSYS2_ENV_CONV_EXCL=BASE_PATH` so the shell does not rewrite the leading slash into a Windows path.
 
-### Preview production build locally
+The tests read the built files. They check that every asset URL sits under the base path and exists, that the page content is in the HTML, that nothing is hidden awaiting a scroll animation, and that the description, link-preview image, menu state and 404 page are present.
+
+Regenerating assets (only needed if a pattern, photo or font changes):
 
 ```bash
-npm run preview
+npm run engrave                          # the SVG line-work
+node scripts/assets.mjs <folder>         # WebP, favicons, font subsets; <folder> holds the original JPEGs
+npm run build && node scripts/og.mjs     # the link-preview image
 ```
 
----
+The original JPEG photographs are in `public/` on the `main` branch.
 
-## Deployment
+## Hosting
 
-The site is deployed on **Netlify** with automatic deploys from the `main` branch. No additional configuration is required — `vite.config.js` and the `dist/` output are sufficient.
-
-Custom domain: `damanaconsult.com` (DNS managed via Netlify nameservers).
-
----
-
-## Design System
-
-The visual identity is built around a dark sculpted aesthetic with gold accents:
-
-- **Tokens** — defined in `src/styles/tokens.css` (gold palette, navy backgrounds, type scale)
-- **Scroll-reveal** — elements carry a `.reveal` class; an `IntersectionObserver` in each section adds `.visible` when they enter the viewport, triggering CSS transitions
-- **Staggered delays** — `.reveal-delay-1` through `.reveal-delay-4` offset animations within a section
-- **GoldFrame** — a reusable component that renders four CSS corner brackets around any content block
-- **`sculpted-panel`** — shared dark inset panel style imported from `sculpted.css`
-
----
+- **Preview:** `.github/workflows/pages.yml` builds with `BASE_PATH=/damana-consult-website/` and publishes `dist/` to GitHub Pages on every push to `main`. Pages must be switched on once in the repository: Settings → Pages → Source: GitHub Actions.
+- **Production:** build with the defaults (`npm run build`) and publish `dist/` to the host that serves damanaconsultant.com. That step is done by hand and is not automated here.
+- **CI:** `.github/workflows/ci.yml` runs on every push and pull request. It builds for the subfolder, runs the tests, and uploads screenshots at 1440, 390 and 360 px as an artifact.
 
 ## Contact
 
-**Damana Consult Ltd**  
-Dar es Salaam, Tanzania  
+Damana Consult Ltd, 4th Floor, Uhuru Financial Tower, Samora Avenue, Dar es Salaam, Tanzania
 info@damanaconsult.com

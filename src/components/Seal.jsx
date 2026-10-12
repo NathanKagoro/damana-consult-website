@@ -43,7 +43,7 @@ export default function Seal({ className = '' }) {
       <text className="seal__text">
         <textPath href="#seal-rim-top" startOffset="50%" textAnchor="middle">DAMANA CONSULT LTD</textPath>
       </text>
-      <text className="seal__text">
+      <text className="seal__text seal__text--foot">
         <textPath href="#seal-rim-bottom" startOffset="50%" textAnchor="middle">DAR ES SALAAM</textPath>
       </text>
     </svg>
