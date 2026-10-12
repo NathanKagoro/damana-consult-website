@@ -1,114 +1,92 @@
+/* Woven sisal: a small basket-weave tile drawn by scripts/engrave.mjs. */
 .sisal-focus {
-  padding: var(--space-xl) 0 0;
-  background: var(--navy);
-  position: relative;
-}
-.sisal-focus::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(201,168,76,0.4), transparent);
-}
-.sisal-focus__header {
-  text-align: center;
-  margin-bottom: var(--space-lg);
-}
-.sisal-focus__heading {
-  font-size: clamp(2.2rem, 4vw, 3.4rem);
-  margin: 0.5rem 0 0.5rem;
-}
-.sisal-focus__panels {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  min-height: 560px;
-}
-.sisal-focus__panel {
-  position: relative;
-  background-size: cover;
-  background-position: center;
-  display: flex;
-  align-items: flex-end;
-  overflow: hidden;
-  transition: flex 0.5s ease;
-}
-/* Diagonal clip on the split between panels */
-.sisal-focus__panel--cultivation {
-  clip-path: polygon(0 0, 97% 0, 100% 100%, 0 100%);
-  margin-right: -3%;
-  z-index: 1;
-}
-.sisal-focus__panel--processing {
-  clip-path: polygon(3% 0, 100% 0, 100% 100%, 0 100%);
-  margin-left: -3%;
-}
-.sisal-focus__panel-overlay {
-  position: absolute;
-  inset: 0;
-}
-.sisal-focus__panel-overlay--navy {
-  background: linear-gradient(180deg, rgba(11,31,58,0.5) 0%, rgba(6,18,31,0.92) 100%);
-}
-.sisal-focus__panel-overlay--gold {
-  background: linear-gradient(180deg, rgba(80,55,10,0.45) 0%, rgba(11,31,58,0.93) 100%);
-}
-.sisal-focus__panel-content {
-  position: relative;
-  z-index: 2;
-  padding: var(--space-lg) var(--space-lg) var(--space-lg);
-}
-.sisal-focus__panel--processing .sisal-focus__panel-content {
-  padding-left: calc(var(--space-lg) + 3%);
-}
-.sisal-focus__panel-label {
-  font-size: 0.65rem;
-  font-weight: 600;
-  letter-spacing: 0.25em;
-  text-transform: uppercase;
-  color: var(--gold);
-  margin-bottom: 0.4rem;
-}
-.sisal-focus__panel-title {
-  font-family: var(--font-display);
-  font-size: clamp(1.7rem, 2.8vw, 2.4rem);
-  font-weight: 600;
-  color: var(--off-white);
-  line-height: 1.1;
-}
-.sisal-focus__points {
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 0.55rem;
-}
-.sisal-focus__points li {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.6rem;
-  font-size: 0.82rem;
-  color: var(--cream);
-  line-height: 1.55;
-}
-.sisal-focus__dot {
-  color: var(--gold);
-  flex-shrink: 0;
-  font-size: 0.65rem;
-  margin-top: 3px;
-}
-.sisal-focus__expansion-badge {
-  margin-top: var(--space-sm);
-  display: inline-block;
-  font-size: 0.72rem;
-  color: var(--gold-light);
-  letter-spacing: 0.1em;
-  font-style: italic;
-  border-top: 1px solid rgba(201,168,76,0.3);
-  padding-top: 0.6rem;
+  padding: clamp(3rem, 7vw, 6rem) 0;
+  background: #CDB677 url('../assets/engraving/weave.svg');
+  background-size: 56px 56px;
+  color: var(--ink);
+  --accent: var(--bronze);
+  --focus: var(--ink);
 }
 
-@media (max-width: 760px) {
-  .sisal-focus__panels { grid-template-columns: 1fr; }
-  .sisal-focus__panel--cultivation { clip-path: none; margin: 0; min-height: 380px; }
-  .sisal-focus__panel--processing  { clip-path: none; margin: 0; min-height: 420px; }
-  .sisal-focus__panel--processing .sisal-focus__panel-content { padding-left: var(--space-md); }
+/* The title on a navy plate, as if stamped onto the bale. */
+.sisal-focus__header {
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto clamp(1.75rem, 4vw, 3rem);
+  padding: 1.1rem clamp(1.25rem, 5vw, 3.25rem) 1.4rem;
+  text-align: center;
+  background: var(--navy);
+  color: var(--on-navy);
+  --accent: var(--gold-light);
+  box-shadow: inset 0 0 0 4px var(--navy), inset 0 0 0 5px var(--gold), 0 10px 26px rgba(40, 25, 0, 0.45);
+}
+.sisal-focus__heading { font-size: clamp(1.5rem, 4.4vw, 2.5rem); }
+
+.sisal-focus__panels {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(1.25rem, 3vw, 2.5rem);
+  align-items: start;
+}
+
+.sisal-focus__panel {
+  padding: clamp(0.9rem, 2.4vw, 1.5rem) clamp(0.9rem, 2.4vw, 1.5rem) clamp(1.4rem, 3vw, 2rem);
+  background: var(--paper-bright);
+  box-shadow: 0 0 0 1px var(--ink), inset 0 0 0 5px var(--paper-bright), inset 0 0 0 6px var(--bronze), 0 14px 30px rgba(40, 25, 0, 0.45);
+}
+
+.sisal-focus__plate {
+  margin: 6px 6px 1.2rem;
+  padding: 4px;
+  border: 1px solid var(--ink);
+}
+.sisal-focus__plate img { width: 100%; }
+
+.sisal-focus__panel-label,
+.sisal-focus__panel-title,
+.sisal-focus__points,
+.sisal-focus__expansion-badge {
+  margin-left: clamp(0.5rem, 1.5vw, 1rem);
+  margin-right: clamp(0.5rem, 1.5vw, 1rem);
+}
+
+.sisal-focus__panel-title {
+  font-size: clamp(1.2rem, 2.6vw, 1.6rem);
+  padding-bottom: 0.8rem;
+  border-bottom: 3px double var(--ink);
+}
+
+.sisal-focus__points li {
+  position: relative;
+  padding: 0.6rem 0 0.6rem 1.5rem;
+  border-bottom: 1px solid var(--feint);
+}
+.sisal-focus__points li::before {
+  content: '';
+  position: absolute;
+  left: 0.15rem;
+  top: 1.15rem;
+  width: 7px;
+  height: 7px;
+  border: 1px solid var(--bronze);
+  transform: rotate(45deg);
+}
+
+.sisal-focus__expansion-badge {
+  margin-top: 1.2rem;
+  padding: 0.6rem 0.9rem;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.8rem;
+  letter-spacing: 0.12em;
+  line-height: 1.5;
+  text-transform: uppercase;
+  text-align: center;
+  background: var(--navy);
+  color: var(--gold-light);
+  box-shadow: inset 0 0 0 3px var(--navy), inset 0 0 0 4px var(--gold);
+}
+
+@media (max-width: 860px) {
+  .sisal-focus__panels { grid-template-columns: minmax(0, 1fr); }
 }

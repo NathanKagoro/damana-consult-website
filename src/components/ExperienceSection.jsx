@@ -1,4 +1,3 @@
-import { useEffect, useRef } from 'react';
 import './ExperienceSection.css';
 
 const stats = [
@@ -18,62 +17,33 @@ const credentials = [
 ];
 
 export default function ExperienceSection() {
-  const sectionRef = useRef(null);
-
-  useEffect(() => {
-    // Scroll-reveal: once a .reveal element enters the viewport it gets the
-    // .visible class, which triggers its CSS fade/slide-in transition.
-    // reveal-delay-N classes stagger sibling elements within the section.
-    const observer = new IntersectionObserver(
-      entries => entries.forEach(e => {
-        if (e.isIntersecting) e.target.classList.add('visible');
-      }),
-      { threshold: 0.12 } // trigger when 12% of the element is visible
-    );
-    const els = sectionRef.current?.querySelectorAll('.reveal');
-    els?.forEach(el => observer.observe(el));
-    return () => observer.disconnect();
-  }, []);
-
   return (
-    <section className="experience-section" ref={sectionRef} id="experience">
+    <section className="experience-section paper" id="experience">
       <div className="experience-section__inner container">
-
-        {/* ── Left: stats ───────────────────────── */}
-        <div className="experience-section__stats">
-          <p className="section-label reveal">Proven Track Record</p>
-          <h2 className="experience-section__heading display-heading carved reveal reveal-delay-1">
-            Built on<br />Experience
-          </h2>
-          <div className="gold-rule gold-rule-left reveal reveal-delay-2" />
-          <div className="experience-section__stat-grid">
-            {stats.map((s, i) => (
-              <div key={s.label} className={`stat-block sculpted-panel reveal reveal-delay-${i + 1}`}>
-                <div className="stat-number">{s.number}</div>
-                <div className="stat-label">{s.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* ── Right: descriptor + credentials ──── */}
-        <div className="experience-section__desc">
-          <p className="experience-section__body reveal reveal-delay-2">
-            Damana Consult Ltd is one of Tanzania's established management consulting and professional services firms — combining deep sectoral knowledge, certified expertise, and an uncompromising commitment to quality.
+        <div className="experience-section__head">
+          <p className="script">Proven Track Record</p>
+          <h2 className="engraved experience-section__heading">Built on Experience</h2>
+          <div className="flourish" aria-hidden="true"><span /></div>
+          <p className="experience-section__body">
+            Damana Consult Ltd is one of Tanzania's established management consulting and professional services firms, combining deep sectoral knowledge, certified expertise, and an uncompromising commitment to quality.
           </p>
-          <div className="ornament-divider reveal reveal-delay-3">
-            <span>✦</span>
-          </div>
-          <ul className="experience-section__credentials reveal reveal-delay-3">
-            {credentials.map(c => (
-              <li key={c}>
-                <span className="cred-dot">◈</span>
-                {c}
-              </li>
-            ))}
-          </ul>
         </div>
 
+        {/* Each figure sits in a lathe-work counter, as a denomination does on a banknote. */}
+        <ul className="experience-section__stat-grid">
+          {stats.map((s) => (
+            <li key={s.label} className="counter">
+              <span className="counter__number">{s.number}</span>
+              <span className="counter__label">{s.label}</span>
+            </li>
+          ))}
+        </ul>
+
+        <ul className="experience-section__credentials">
+          {credentials.map((c) => (
+            <li key={c}>{c}</li>
+          ))}
+        </ul>
       </div>
     </section>
   );

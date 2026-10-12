@@ -1,4 +1,7 @@
-import { useEffect, useRef } from 'react';
+import hillside480 from '../assets/photos/hillside-plantation-480.webp';
+import hillside960 from '../assets/photos/hillside-plantation-960.webp';
+import drying480 from '../assets/photos/fiber-drying-480.webp';
+import drying960 from '../assets/photos/fiber-drying-960.webp';
 import './SisalFocusSection.css';
 
 const cultivationPoints = [
@@ -15,73 +18,57 @@ const processingPoints = [
   'Expanding into value-added sisal manufacturing and processing',
 ];
 
+const sizes = '(max-width: 860px) calc(100vw - 5rem), 500px';
+
 export default function SisalFocusSection() {
-  const sectionRef = useRef(null);
-
-  // Scroll-reveal — see ExperienceSection for full explanation
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      entries => entries.forEach(e => {
-        if (e.isIntersecting) e.target.classList.add('visible');
-      }),
-      { threshold: 0.1 }
-    );
-    const els = sectionRef.current?.querySelectorAll('.reveal');
-    els?.forEach(el => observer.observe(el));
-    return () => observer.disconnect();
-  }, []);
-
   return (
-    <section className="sisal-focus" ref={sectionRef} id="sisal-focus">
-      <div className="container sisal-focus__header">
-        <p className="section-label reveal">Sisal Operations</p>
-        <h2 className="display-heading carved sisal-focus__heading reveal reveal-delay-1">
-          From Soil to Fibre
-        </h2>
-        <div className="gold-rule reveal reveal-delay-2" />
-      </div>
+    <section className="sisal-focus" id="sisal-focus">
+      <div className="container">
+        <header className="sisal-focus__header">
+          <p className="script">Sisal Operations</p>
+          <h2 className="engraved sisal-focus__heading">From Soil to Fibre</h2>
+        </header>
 
-      <div className="sisal-focus__panels">
-
-        {/* ── Cultivation ─────────────────────── */}
-        <div
-          className="sisal-focus__panel sisal-focus__panel--cultivation reveal reveal-delay-1"
-          style={{ backgroundImage: 'url(/hillside-plantation.jpg)' }}
-        >
-          <div className="sisal-focus__panel-overlay sisal-focus__panel-overlay--navy" />
-          <div className="sisal-focus__panel-content">
-            <p className="sisal-focus__panel-label">Cultivation</p>
-            <h3 className="sisal-focus__panel-title carved">Growing the<br/>Future</h3>
-            <div className="gold-rule gold-rule-left" style={{ margin: '0.8rem 0' }} />
+        <div className="sisal-focus__panels">
+          <article className="sisal-focus__panel">
+            <figure className="sisal-focus__plate">
+              <img
+                src={hillside480}
+                srcSet={`${hillside480} 480w, ${hillside960} 960w`}
+                sizes={sizes}
+                width="960"
+                height="454"
+                loading="lazy"
+                alt="Young sisal planted in rows across a hillside"
+              />
+            </figure>
+            <p className="script sisal-focus__panel-label">Cultivation</p>
+            <h3 className="engraved sisal-focus__panel-title">Growing the Future</h3>
             <ul className="sisal-focus__points">
-              {cultivationPoints.map(p => (
-                <li key={p}><span className="sisal-focus__dot">◈</span>{p}</li>
-              ))}
+              {cultivationPoints.map((p) => <li key={p}>{p}</li>)}
             </ul>
-          </div>
-        </div>
+          </article>
 
-        {/* ── Processing & Manufacturing ──────── */}
-        <div
-          className="sisal-focus__panel sisal-focus__panel--processing reveal reveal-delay-2"
-          style={{ backgroundImage: 'url(/fiber-drying.jpg)' }}
-        >
-          <div className="sisal-focus__panel-overlay sisal-focus__panel-overlay--gold" />
-          <div className="sisal-focus__panel-content">
-            <p className="sisal-focus__panel-label">Processing &amp; Manufacturing</p>
-            <h3 className="sisal-focus__panel-title carved">Refining &amp;<br/>Expanding</h3>
-            <div className="gold-rule gold-rule-left" style={{ margin: '0.8rem 0' }} />
+          <article className="sisal-focus__panel">
+            <figure className="sisal-focus__plate">
+              <img
+                src={drying480}
+                srcSet={`${drying480} 480w, ${drying960} 960w`}
+                sizes={sizes}
+                width="960"
+                height="454"
+                loading="lazy"
+                alt="Sisal fibre hung to dry on lines between posts"
+              />
+            </figure>
+            <p className="script sisal-focus__panel-label">Processing &amp; Manufacturing</p>
+            <h3 className="engraved sisal-focus__panel-title">Refining &amp; Expanding</h3>
             <ul className="sisal-focus__points">
-              {processingPoints.map(p => (
-                <li key={p}><span className="sisal-focus__dot">◈</span>{p}</li>
-              ))}
+              {processingPoints.map((p) => <li key={p}>{p}</li>)}
             </ul>
-            <div className="sisal-focus__expansion-badge">
-              ✦ &nbsp;Expanding from plantation into manufacturing
-            </div>
-          </div>
+            <p className="sisal-focus__expansion-badge">Expanding from plantation into manufacturing</p>
+          </article>
         </div>
-
       </div>
     </section>
   );

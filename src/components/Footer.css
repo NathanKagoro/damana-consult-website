@@ -1,97 +1,91 @@
+/* The counterfoil: the stub left in the book once the certificate is torn
+   out, with the row of perforations along its top edge. */
 .footer {
-  background: linear-gradient(180deg, var(--navy) 0%, #06121f 100%);
-  border-top: 1px solid rgba(201,168,76,0.2);
-  padding-top: 0;
+  position: relative;
+  padding-top: clamp(2.5rem, 6vw, 4rem);
+  background: var(--navy-deep);
+  color: var(--on-navy-soft);
 }
-.footer__top-rule {
-  height: 2px;
-  background: linear-gradient(90deg, transparent, var(--gold), var(--gold-dark), var(--gold), transparent);
-  margin-bottom: var(--space-lg);
-}
-.footer__inner {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: var(--space-lg);
-  padding-bottom: var(--space-lg);
-}
-.footer__company-name {
-  font-family: var(--font-display);
-  font-size: 1.3rem;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  color: var(--off-white);
-}
-.footer__gold-rule {
-  width: 40px;
-  height: 1px;
-  background: var(--gold);
-  margin: 0.7rem 0;
-}
-.footer__tagline {
-  font-size: 0.78rem;
-  color: var(--text-muted);
-  letter-spacing: 0.06em;
-  font-style: italic;
-}
-.footer__address {
-  margin-top: 0.75rem;
-  font-size: 0.8rem;
-  color: var(--cream);
-  line-height: 1.6;
-}
-.footer__contact-label {
-  font-size: 0.68rem;
-  font-weight: 600;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--gold);
-  margin-bottom: var(--space-sm);
-}
-.footer__quick-copy {
-  font-size: 0.82rem;
-  color: var(--cream);
-  line-height: 1.6;
-  margin-bottom: 0.8rem;
-}
-.footer__contact-link {
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--gold-light);
-  border-bottom: 1px solid rgba(201,168,76,0.45);
-  width: fit-content;
-  padding-bottom: 0.2rem;
-}
-.footer__nav {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-}
-.footer__nav a {
-  font-size: 0.82rem;
-  color: var(--cream);
-  transition: color 0.2s;
-  letter-spacing: 0.04em;
-}
-.footer__nav a:hover { color: var(--gold-light); }
-.footer__bottom { border-top: 1px solid rgba(201,168,76,0.12); }
-.footer__bottom-rule {
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(201,168,76,0.3), transparent);
-}
-.footer__bottom-inner {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-top: 1rem;
-  padding-bottom: 1rem;
-  font-size: 0.72rem;
-  color: var(--text-muted);
-  letter-spacing: 0.04em;
+.footer::before {
+  content: '';
+  position: absolute;
+  top: -5px;
+  left: 0;
+  right: 0;
+  height: 10px;
+  background: radial-gradient(circle, var(--paper) 0 4px, transparent 4.6px) center / 18px 10px repeat-x;
 }
 
-@media (max-width: 768px) {
-  .footer__inner { grid-template-columns: 1fr; gap: var(--space-md); }
-  .footer__bottom-inner { flex-direction: column; gap: 0.4rem; text-align: center; }
+.footer__inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 0.8fr);
+  gap: clamp(1.75rem, 5vw, 4rem);
+}
+
+.footer__company-name {
+  font-size: 1.25rem;
+  color: var(--gold-light);
+}
+.footer__tagline {
+  margin: 0.4rem 0 0.9rem;
+  padding-bottom: 0.9rem;
+  font-style: italic;
+  color: var(--on-navy);
+  border-bottom: 1px solid rgba(201, 168, 76, 0.4);
+}
+
+.footer__label {
+  margin-bottom: 0.4rem;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.8rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gold-light);
+}
+
+.footer__link {
+  display: flex;
+  align-items: center;
+  width: fit-content;
+  min-width: 44px;
+  min-height: 44px;
+  color: var(--on-navy);
+  text-decoration: underline;
+  text-decoration-color: rgba(201, 168, 76, 0.6);
+  text-underline-offset: 0.3em;
+  transition: color 0.4s ease;
+}
+.footer__link:hover { color: var(--gold-light); }
+
+.footer__bottom {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem 2rem;
+  margin-top: clamp(1.5rem, 4vw, 2.5rem);
+  padding-top: 0.75rem;
+  padding-bottom: 1.25rem;
+  font-size: 0.875rem;
+  border-top: 1px solid rgba(201, 168, 76, 0.4);
+}
+.footer__credit {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 0.9rem;
+}
+.footer__back {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--gold-light);
+  text-decoration: underline;
+  text-underline-offset: 0.3em;
+}
+.footer__back:hover { color: #F3E2A8; }
+
+@media (max-width: 760px) {
+  .footer__inner { grid-template-columns: minmax(0, 1fr); }
 }

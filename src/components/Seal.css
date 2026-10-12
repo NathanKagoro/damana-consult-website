@@ -1,0 +1,26 @@
+.seal {
+  width: 150px;
+  height: 150px;
+  overflow: visible;
+}
+
+.seal__wafer {
+  filter: drop-shadow(0 2px 3px rgba(40, 25, 0, 0.45));
+}
+
+/* The die is cut in a darker bronze; a pale offset line beneath each stroke
+   gives the raised look of a pressed seal. */
+.seal__die {
+  stroke: #6A5216;
+  filter: drop-shadow(0.6px 0.8px 0 rgba(255, 246, 208, 0.8));
+}
+.seal__star { fill: #6A5216; stroke: none; }
+
+.seal__text {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 16px;
+  letter-spacing: 1.5px;
+  fill: #4E3B0C;
+  filter: drop-shadow(0.6px 0.8px 0 rgba(255, 246, 208, 0.8));
+}

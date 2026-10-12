@@ -1,5 +1,3 @@
-import { useEffect, useRef } from 'react';
-import GoldFrame from './GoldFrame';
 import './TrackRecord.css';
 
 const projects = [
@@ -53,49 +51,42 @@ const projects = [
   },
 ];
 
+/**
+ * The engagements are entered as lines in an audit ledger: the year in the
+ * margin, left of the red rule, and the particulars to its right. A plain
+ * vertical register has nothing to scroll sideways, so it reads the same with
+ * a keyboard, a mouse or a thumb.
+ */
 export default function TrackRecord() {
-  const sectionRef = useRef(null);
-
-  // Scroll-reveal — see ExperienceSection for full explanation
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      entries => entries.forEach(e => {
-        if (e.isIntersecting) e.target.classList.add('visible');
-      }),
-      { threshold: 0.1 }
-    );
-    const els = sectionRef.current?.querySelectorAll('.reveal');
-    els?.forEach(el => observer.observe(el));
-    return () => observer.disconnect();
-  }, []);
-
-
-
   return (
-    <section className="track-record" ref={sectionRef} id="track-record">
+    <section className="track-record" id="track-record">
       <div className="container">
-        <p className="section-label reveal">Selected Engagements</p>
-        <h2 className="display-heading carved track-record__heading reveal reveal-delay-1">
-          Decades of Delivery
-        </h2>
-        <div className="gold-rule gold-rule-left reveal reveal-delay-2" />
-        <p className="track-record__sub reveal reveal-delay-2">
-          A selection of our work across public sector, private sector, and development partner projects.
-        </p>
-      </div>
+        <div className="ledger">
+          <header className="ledger__title">
+            <p className="script">Selected Engagements</p>
+            <h2 className="engraved track-record__heading">Decades of Delivery</h2>
+            <p className="track-record__sub">
+              A selection of our work across public sector, private sector, and development partner projects.
+            </p>
+          </header>
 
-      {/* carousel-track enables horizontal overflow scroll; CSS snap makes swiping feel native */}
-      <div className="carousel-track track-record__track reveal reveal-delay-3">
-        {projects.map((p, i) => (
-          <div key={`${p.client}-${i}`} className="gold-card track-record__card">
-            <div className="track-record__card-sector">{p.sector}</div>
-            <div className="track-record__card-year">{p.year}</div>
-            <GoldFrame className="track-record__card-frame">
-              <div className="track-record__card-client">{p.client}</div>
-            </GoldFrame>
-            <p className="track-record__card-scope">{p.scope}</p>
+          <div className="ledger__sheet" role="table" aria-label="Selected engagements">
+            <div className="ledger__row ledger__row--head" role="row">
+              <span role="columnheader">Year</span>
+              <span role="columnheader">Engagement</span>
+              <span role="columnheader">Sector</span>
+              <span role="columnheader">Scope of work</span>
+            </div>
+            {projects.map((p) => (
+              <div key={p.client} className="ledger__row" role="row">
+                <span className="ledger__year" role="cell">{p.year}</span>
+                <span className="ledger__client" role="cell">{p.client}</span>
+                <span className="ledger__sector" role="cell">{p.sector}</span>
+                <span className="ledger__scope" role="cell">{p.scope}</span>
+              </div>
+            ))}
           </div>
-        ))}
+        </div>
       </div>
     </section>
   );

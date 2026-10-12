@@ -1,4 +1,4 @@
-﻿import Navbar from './components/Navbar';
+import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import ExperienceSection from './components/ExperienceSection';
 import TrackRecord from './components/TrackRecord';
@@ -10,6 +10,7 @@ import Footer from './components/Footer';
 export default function App() {
   return (
     <>
+      <a className="skip-link" href="#experience">Skip to content</a>
       <Navbar />
       <main id="top">
         <Hero />
@@ -18,8 +19,8 @@ export default function App() {
         <SisalFocusSection />
         <ServicesSection />
         <ContactCta />
-        <Footer />
       </main>
+      <Footer />
     </>
   );
 }

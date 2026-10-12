@@ -1,25 +1,24 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import path from 'node:path'
 
-// https://vite.dev/config/
+// BASE_PATH is the folder the site is served from. The default, "/", is the
+// client's own domain. The GitHub Pages preview sets "/damana-consult-website/".
+// SITE_URL is the public address, needed because link previews (Open Graph)
+// only accept absolute image URLs.
+const base = (process.env.BASE_PATH || '/').replace(/\/?$/, '/')
+const siteUrl = (process.env.SITE_URL || 'https://damanaconsultant.com/').replace(/\/?$/, '/')
+
 export default defineConfig({
-  plugins: [react()],
-  build: {
-    outDir: 'dist',
-    assetsDir: '',
-    emptyOutDir: true,
-    rollupOptions: {
-      output: {
-        entryFileNames: 'app.js',
-        chunkFileNames: 'chunk-[name].js',
-        assetFileNames: ({ name }) => {
-          const ext = path.extname(name || '')
-          const base = path.basename(name || 'asset', ext)
-          if (ext === '.css') return 'app.css'
-          return `${base}${ext}`
-        },
-      },
+  base,
+  plugins: [
+    react(),
+    {
+      name: 'site-url',
+      transformIndexHtml: (html) => html.replaceAll('%SITE_URL%', siteUrl).replaceAll('%BASE%', base),
     },
+  ],
+  build: {
+    // Small engraving SVGs stay as files: they are reused across sections and cache better than inlined copies.
+    assetsInlineLimit: 1024,
   },
 })
