@@ -25,7 +25,7 @@ export default function ExperienceSection() {
           <h2 className="engraved experience-section__heading">Built on Experience</h2>
           <div className="flourish" aria-hidden="true"><span /></div>
           <p className="experience-section__body">
-            Damana Consult Ltd is one of Tanzania's established management consulting and professional services firms, combining deep sectoral knowledge, certified expertise, and an uncompromising commitment to quality.
+            Damana Consult Ltd is one of Tanzania's established management consulting and professional services firms. Its certified staff know the sectors they work in, and they hold every engagement to a high standard.
           </p>
         </div>
 
