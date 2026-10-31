@@ -112,7 +112,7 @@ The original JPEG photographs are in `public/` on the `main` branch.
 
 ## Estate accounts page
 
-- **Expected figures** come from `src/estate/items.json`: each regular farm cost with a typical amount, how often it occurs, an expected yearly total and the share of that total falling in each month. They were worked out from the estate's 2021–2026 cashbook.
+- **Expected figures** come from `src/estate/items.json`: each regular farm cost with a typical amount, how often it occurs, an expected yearly total and the share of that total falling in each month. They were worked out from the estate's 2021–2026 cashbook. The log starts in October 2026, the month after the cashbook ends, so the calendar shows twelve months at a time from there and never shows the cashbook's months as empty.
 - **Logging** happens in the browser; there is no server. Entries are kept in the browser's storage and written into an `.xlsx` with three sheets: Logged expenses, By month, and Expected by month.
 - **Keeping the Excel file in step:** in Chrome or Edge on a computer, *Create new file* or *Open existing file* connects a workbook, and every entry saved or deleted afterwards is written straight into it. In other browsers, *Download* saves the workbook and *Open existing file* loads one back.
 - The page uses the site's original theme (Cormorant Garamond and Inter, self-hosted through Fontsource) and SheetJS (`xlsx`) for the workbook.

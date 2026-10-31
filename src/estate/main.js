@@ -26,9 +26,17 @@ const OTHER = {
   other: { group: 'Other', name: 'Other' },
 }
 
+// The log starts in October 2026, the first month after the cashbook ends.
+// Months before it are in the cashbook, so the calendar only looks forward.
+const START = { y: 2026, m: 9 }
+const idx = (y, m) => (y - START.y) * 12 + (m - START.m)
+const ym = (i) => ({ y: START.y + Math.floor((START.m + i) / 12), m: (START.m + i) % 12 })
+const label = (i) => `${MONTHS[ym(i).m]} ${ym(i).y}`
+
 const now = new Date()
-let year = now.getFullYear()
-let month = now.getMonth()
+const nowIdx = Math.max(0, idx(now.getFullYear(), now.getMonth()))
+let win = Math.floor(nowIdx / 12) // which run of twelve months is shown
+let sel = nowIdx // selected month, counted from October 2026
 let entries = load()
 let handle = null // connected Excel file, where the browser supports it
 
@@ -82,13 +90,17 @@ function persist() {
 })()
 
 function resetDate() {
-  const d = year === now.getFullYear() && month === now.getMonth() ? now : new Date(year, month, 1)
+  const { y, m } = ym(sel)
+  const d = sel === idx(now.getFullYear(), now.getMonth()) ? now : new Date(y, m, 1)
   $('f-date').value = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 }
 
 // ── render ──
 function render() {
-  $('yr').textContent = year
+  const { y: year, m: month } = ym(sel)
+  const first = win * 12
+  $('yr').textContent = `${SHORT[ym(first).m]} ${ym(first).y} – ${SHORT[ym(first + 11).m]} ${ym(first + 11).y}`
+  $('yr-prev').disabled = win === 0
   const exp = monthExpected(month)
   const logs = loggedIn(year, month)
   const lg = sum(logs)
@@ -104,15 +116,16 @@ function render() {
     d.textContent = 'nothing logged yet'
     d.className = ''
   }
-  $('c-ylog').textContent = short(sum(entries.filter((e) => +e.date.slice(0, 4) === year)))
+  $('c-ylog').textContent = short(sum(entries.filter((e) => { const i = idx(+e.date.slice(0, 4), +e.date.slice(5, 7) - 1); return i >= first && i < first + 12 })))
   $('c-yexp').textContent = short(yearExpected)
 
   // calendar
   const cal = $('cal')
   cal.textContent = ''
-  for (let m = 0; m < 12; m++) {
+  for (let i = first; i < first + 12; i++) {
+    const { y, m } = ym(i)
     const e = monthExpected(m)
-    const l = sum(loggedIn(year, m))
+    const l = sum(loggedIn(y, m))
     const peaks = ITEMS.filter((it) => it.w[m] > 0.13 && expected(it, m) >= 60000)
       .sort((a, b) => expected(b, m) - expected(a, m))
       .slice(0, 3)
@@ -121,15 +134,15 @@ function render() {
     const b = document.createElement('button')
     b.type = 'button'
     b.className = 'mo'
-    b.setAttribute('aria-pressed', m === month ? 'true' : 'false')
-    const isNow = year === now.getFullYear() && m === now.getMonth()
-    b.innerHTML = `<span class="mname">${MONTHS[m]}${isNow ? '<span class="now">this month</span>' : ''}</span>
+    b.setAttribute('aria-pressed', i === sel ? 'true' : 'false')
+    const isNow = i === idx(now.getFullYear(), now.getMonth())
+    b.innerHTML = `<span class="mname">${MONTHS[m]} ${y}${isNow ? '<span class="now">this month</span>' : ''}</span>
       <span class="exp num">${fmt(e)}<em>expected</em></span>
       <span class="bar" aria-hidden="true"><i style="width:${Math.min(100, (l / e) * 100)}%"${l > e ? ' class="over"' : ''}></i></span>
       <span class="logged num">${l ? fmt(l) + ' logged' : 'Nothing logged'}</span>
       <span class="peaks">${peaks.length ? peaks.join(' · ') : 'Steady running costs only'}</span>`
     b.addEventListener('click', () => {
-      month = m
+      sel = i
       resetDate()
       render()
     })
@@ -237,15 +250,14 @@ function buildWorkbook() {
     .slice()
     .sort((a, b) => a.date.localeCompare(b.date))
     .forEach((e) => rows.push([e.id, e.date, e.group, e.item, +e.amount, e.method, e.qty || '', e.note || '', e.itemId]))
-  const years = [...new Set([year, ...entries.map((e) => +e.date.slice(0, 4))])].sort()
+  const last = Math.max(nowIdx, win * 12 + 11, ...entries.map((e) => idx(+e.date.slice(0, 4), +e.date.slice(5, 7) - 1)))
   const months = [['Month', 'Expected (TZS)', 'Logged (TZS)', 'Difference (TZS)']]
-  years.forEach((y) => {
-    for (let m = 0; m < 12; m++) {
-      const x = Math.round(monthExpected(m))
-      const l = sum(loggedIn(y, m))
-      months.push([`${MONTHS[m]} ${y}`, x, l, x - l])
-    }
-  })
+  for (let i = 0; i <= last; i++) {
+    const { y, m } = ym(i)
+    const x = Math.round(monthExpected(m))
+    const l = sum(loggedIn(y, m))
+    months.push([label(i), x, l, x - l])
+  }
   const exp = [['Group', 'Expense', 'Swahili in cashbook', 'Typical cost each time (TZS)', 'Basis', 'How often', 'Expected per year (TZS)', ...SHORT]]
   ITEMS.forEach((it) => exp.push([it.group, it.name, it.sw, it.cost, it.basis, it.how, Math.round(it.perYear), ...it.w.map((w) => Math.round(it.perYear * w))]))
   const wb = XLSX.utils.book_new()
@@ -402,6 +414,7 @@ $('f').addEventListener('submit', async (ev) => {
   if (!date) return fail('Add the date the money was spent.')
   if (!itemId) return fail('Choose which expense this was.')
   if (!amount) return fail('Enter the amount in shillings.')
+  if (idx(+date.slice(0, 4), +date.slice(5, 7) - 1) < 0) return fail('The log starts in October 2026. Earlier spending is in the cashbook.')
   const info = itemInfo(itemId)
   entries.push({ id: newId(), date, itemId, item: info.name, group: info.group, amount, method: $('f-method').value, qty: $('f-qty').value.trim(), note: $('f-note').value.trim(), createdAt: new Date().toISOString() })
   persist()
@@ -410,26 +423,21 @@ $('f').addEventListener('submit', async (ev) => {
   $('f-amt').value = ''
   $('f-qty').value = ''
   $('f-note').value = ''
-  const y = +date.slice(0, 4)
-  const m = +date.slice(5, 7) - 1
-  if (y !== year || m !== month) {
-    year = y
-    month = m
-  }
+  sel = idx(+date.slice(0, 4), +date.slice(5, 7) - 1)
+  win = Math.floor(sel / 12)
   render()
   await sync()
 })
 
-$('yr-prev').addEventListener('click', () => {
-  year--
+const showWindow = (w) => {
+  win = Math.max(0, w)
+  sel = nowIdx >= win * 12 && nowIdx < win * 12 + 12 ? nowIdx : win * 12
   resetDate()
   render()
-})
-$('yr-next').addEventListener('click', () => {
-  year++
-  resetDate()
-  render()
-})
+}
+$('yr-prev').addEventListener('click', () => showWindow(win - 1))
+$('yr-next').addEventListener('click', () => showWindow(win + 1))
+$('f-date').min = '2026-10-01'
 
 if (!window.showOpenFilePicker) {
   $('xl-new').textContent = 'Download new file'

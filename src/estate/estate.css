@@ -43,9 +43,10 @@ button{font:inherit;cursor:pointer}
 .mast h1{font-size:clamp(2.4rem,6vw,3.6rem)}
 .mast p.lede{max-width:40rem;margin:0 auto;color:var(--cream);font-weight:400;text-wrap:balance}
 .yearbar{display:flex;justify-content:center;align-items:center;gap:1rem;margin-top:1.4rem}
-.yearbar .yr{font-variant-numeric:lining-nums;font-family:var(--font-display);font-weight:700;font-size:1.7rem;color:var(--gold);min-width:4ch;text-align:center}
+.yearbar .yr{font-variant-numeric:lining-nums;font-family:var(--font-display);font-weight:700;font-size:1.45rem;color:var(--gold);min-width:4ch;text-align:center}
 .ghost{background:none;border:1px solid var(--gold);color:var(--gold);font-size:.72rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;padding:.5rem 1rem;min-height:40px;position:relative}
-.ghost:hover{background:var(--gold);color:var(--navy)}
+.ghost:hover:not(:disabled){background:var(--gold);color:var(--navy)}
+.ghost:disabled{opacity:.35;cursor:default}
 
 /* summary panel */
 .certificate{background:linear-gradient(160deg,var(--navy-mid),var(--navy));border:1px solid var(--line);box-shadow:var(--shadow-inset),var(--shadow-raised);border-radius:8px;padding:clamp(1.25rem,3vw,2rem)}
@@ -152,3 +153,13 @@ footer{text-align:center;margin-top:3.5rem;padding-top:1.25rem;border-top:1px so
   .row2{grid-template-columns:minmax(0,1fr)}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* Logging comes first: a short masthead, then the form. */
+.mast{padding-bottom:1rem}
+.mast-cta{margin:1.25rem 0 0}
+.mast-cta .plate{text-decoration:none}
+.sec--first{margin-top:1.5rem}
+.sec--tight{margin-top:2rem}
+.sec--tight .sec-head h2{font-size:clamp(1.4rem,3vw,1.9rem)}
+#forecast{margin-top:clamp(3rem,7vw,4.75rem)}
+#forecast .yearbar{margin-top:.9rem}
