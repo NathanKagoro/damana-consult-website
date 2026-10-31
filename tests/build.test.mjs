@@ -69,3 +69,15 @@ test('the menu button states whether it is open, and there is a way back to the 
   assert.match(html, /<button[^>]*aria-expanded="false"[^>]*aria-controls="site-menu"/)
   assert.match(html, /href="https:\/\/nathankagoro\.com"/)
 })
+
+test('the estate accounts page is built, kept out of search engines, and reaches its assets under the base path', () => {
+  const file = join(dist, 'estate', 'index.html')
+  assert.ok(existsSync(file), 'estate/index.html missing from dist')
+  const page = readFileSync(file, 'utf8')
+  assert.match(page, /<meta name="robots" content="noindex, nofollow"/)
+  const urls = localUrls(page)
+  assert.ok(urls.length >= 2, 'expected the estate page to reference its script and stylesheet')
+  assert.deepEqual(urls.filter((u) => !u.startsWith(base)), [])
+  const missing = urls.map((u) => u.slice(base.length).split(/[?#]/)[0]).filter((p) => p && !existsSync(join(dist, p)))
+  assert.deepEqual(missing, [])
+})

@@ -1,6 +1,8 @@
 # Damana Consult Ltd website
 
-The website of Damana Consult Ltd, a management consulting and audit firm in Dar es Salaam, Tanzania, which also grows and processes sisal. It is a single page: who the firm is, a register of past engagements, its sisal operations, its services, and how to reach it.
+The website of Damana Consult Ltd, a management consulting and audit firm in Dar es Salaam, Tanzania, which also grows and processes sisal. The main page covers who the firm is, a register of past engagements, its sisal operations, its services, and how to reach it.
+
+A second page, `/estate/`, holds the Damana Estate farm accounts: an expected-expenses calendar for the sisal farm and an expense log that is kept in an Excel file. It is not linked from the main page and asks search engines not to index it, but like everything on GitHub Pages it can be opened by anyone who has the address.
 
 - Production site: [damanaconsultant.com](https://damanaconsultant.com)
 - Preview of this repository: [nathankagoro.github.io/damana-consult-website](https://nathankagoro.github.io/damana-consult-website/) (GitHub Pages, built from `main`)
@@ -63,6 +65,8 @@ scripts/
   screenshots.mjs             photographs the built page at 1440, 390 and 360 px
   og.mjs                      makes public/og.jpg from the built page
 tests/build.test.mjs          checks on the built site
+estate/index.html             the estate accounts page
+src/estate/                   its script, styles and expected-expense data (items.json)
 ```
 
 ## Run, build, test
@@ -105,6 +109,13 @@ npm run build && node scripts/og.mjs     # the link-preview image
 ```
 
 The original JPEG photographs are in `public/` on the `main` branch.
+
+## Estate accounts page
+
+- **Expected figures** come from `src/estate/items.json`: each regular farm cost with a typical amount, how often it occurs, an expected yearly total and the share of that total falling in each month. They were worked out from the estate's 2021–2026 cashbook.
+- **Logging** happens in the browser; there is no server. Entries are kept in the browser's storage and written into an `.xlsx` with three sheets: Logged expenses, By month, and Expected by month.
+- **Keeping the Excel file in step:** in Chrome or Edge on a computer, *Create new file* or *Open existing file* connects a workbook, and every entry saved or deleted afterwards is written straight into it. In other browsers, *Download* saves the workbook and *Open existing file* loads one back.
+- The page uses the site's original theme (Cormorant Garamond and Inter, self-hosted through Fontsource) and SheetJS (`xlsx`) for the workbook.
 
 ## Hosting
 

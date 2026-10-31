@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Damana Estate Accounts</title>
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="theme-color" content="#0B1F3A" />
+    <link rel="icon" type="image/png" href="%BASE%favicon.png" />
+  </head>
+  <body>
+    <div class="wrap">
+      <nav class="topbar" aria-label="Site">
+        <a href="%BASE%">Damana Consult</a>
+        <span class="script">Estate accounts</span>
+      </nav>
+
+      <header class="mast">
+        <p class="script">Damana Estate · Sisal</p>
+        <h1 class="engraved">Farm Accounts</h1>
+        <div class="flourish" aria-hidden="true"></div>
+        <p class="lede">What the sisal farm is expected to cost each month, and a record of what is actually spent. Expected figures come from the 2021–2026 cashbook.</p>
+        <div class="yearbar">
+          <button class="ghost" id="yr-prev" type="button" aria-label="Previous year">Prev</button>
+          <span class="yr num" id="yr" aria-live="polite"></span>
+          <button class="ghost" id="yr-next" type="button" aria-label="Next year">Next</button>
+        </div>
+      </header>
+
+      <section class="certificate" aria-labelledby="sum-h">
+        <div class="cert-head">
+          <p class="script" id="sum-month"></p>
+          <h2 class="engraved" id="sum-h">Expected and spent</h2>
+        </div>
+        <ul class="counters">
+          <li class="counter"><b id="c-exp">–</b><span>Expected this month</span></li>
+          <li class="counter"><b id="c-log">–</b><span>Logged this month<small id="c-diff"></small></span></li>
+          <li class="counter"><b id="c-ylog">–</b><span>Logged this year</span></li>
+          <li class="counter"><b id="c-yexp">–</b><span>Expected per year</span></li>
+        </ul>
+      </section>
+
+      <section class="sec" aria-labelledby="cal-h">
+        <div class="sec-head">
+          <h2 class="engraved" id="cal-h">Expected expenses calendar</h2>
+          <p>Each month shows the expected cost, what has been logged against it, and the season's main activities. Choose a month to see it line by line.</p>
+        </div>
+        <ul class="cal" id="cal"></ul>
+        <div class="legend"><span>Logged, within expected</span><span class="o">Logged, over expected</span></div>
+      </section>
+
+      <section class="sec" aria-labelledby="det-h">
+        <div class="ledger">
+          <div class="ledger-title">
+            <p class="script" id="det-script"></p>
+            <h2 class="engraved" id="det-h">Expected against logged</h2>
+            <p>Typical amounts based on Oct 2024 – Sep 2026</p>
+          </div>
+          <div class="scroll">
+            <table class="lg">
+              <thead><tr><th>Expense</th><th>How often</th><th class="r">Expected</th><th class="r">Logged</th><th class="r">Left</th></tr></thead>
+              <tbody id="det-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="sec" aria-labelledby="xl-h">
+        <div class="sec-head">
+          <h2 class="engraved" id="xl-h">Excel file</h2>
+          <p>Connect an Excel file and every entry you save is written into it. Without a connected file, entries stay in this browser until you download them.</p>
+        </div>
+        <p class="file-state" id="file-state" role="status"><span class="dot" id="file-dot"></span><span id="file-text">No Excel file connected. Entries are kept in this browser.</span></p>
+        <div class="xl">
+          <button class="plate" id="xl-open" type="button">Open existing file</button>
+          <button class="plate" id="xl-new" type="button">Create new file</button>
+          <button class="plate" id="xl-download" type="button">Download (.xlsx)</button>
+          <label class="vh" for="xl-input">Choose an Excel file</label>
+          <input class="vh" id="xl-input" type="file" accept=".xlsx" tabindex="-1" />
+        </div>
+        <p class="xl-note" id="xl-note" role="status"></p>
+      </section>
+
+      <section class="sec" aria-labelledby="log-h">
+        <div class="sec-head">
+          <h2 class="engraved" id="log-h">Log an expense</h2>
+        </div>
+        <div class="two">
+          <div class="form-sheet">
+            <h3 class="engraved">New entry</h3>
+            <form id="f" novalidate>
+              <div class="row2">
+                <label for="f-date">Date<input id="f-date" type="date" required /></label>
+                <label for="f-amt">Amount (TZS)<input id="f-amt" type="text" inputmode="numeric" placeholder="e.g. 120,000" autocomplete="off" required /></label>
+              </div>
+              <label for="f-item">Expense<select id="f-item" required></select></label>
+              <div class="row2">
+                <label for="f-method">Paid by<select id="f-method"><option>CRDB transfer</option><option>Mobile money</option><option>Cash</option><option>Other</option></select></label>
+                <label for="f-qty">Quantity (optional)<input id="f-qty" type="text" placeholder="e.g. 5 acres, 20 L" autocomplete="off" /></label>
+              </div>
+              <label for="f-note">Note<textarea id="f-note" rows="2" placeholder="What it was for, who was paid"></textarea></label>
+              <button class="plate" id="f-save" type="submit">Save entry</button>
+              <p class="status" id="f-status" role="status"></p>
+            </form>
+          </div>
+          <div class="ledger">
+            <div class="ledger-title">
+              <h3 class="engraved" id="ent-h">Entries</h3>
+              <p id="ent-sub"></p>
+            </div>
+            <div class="scroll">
+              <table class="lg" style="min-width:420px">
+                <thead><tr><th>Date</th><th>Expense</th><th class="r">Amount</th><th></th></tr></thead>
+                <tbody id="ent-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <footer>Damana Estate · expected figures are estimates and will sharpen as real spending is logged</footer>
+    </div>
+    <script type="module" src="/src/estate/main.js"></script>
+  </body>
+</html>
