@@ -19,71 +19,13 @@
         <p class="script">Damana Estate · Sisal</p>
         <h1 class="engraved">Farm Accounts</h1>
         <div class="flourish" aria-hidden="true"></div>
-        <p class="lede">What the sisal farm is expected to cost each month, and a record of what is actually spent. Expected figures come from the 2021–2026 cashbook.</p>
-        <div class="yearbar">
-          <button class="ghost" id="yr-prev" type="button" aria-label="Previous year">Prev</button>
-          <span class="yr num" id="yr" aria-live="polite"></span>
-          <button class="ghost" id="yr-next" type="button" aria-label="Next year">Next</button>
-        </div>
+        <p class="lede">What the sisal farm is expected to cost each month, and a record of what is actually spent. Expected figures come from the 2021–2026 cashbook. The log starts in October 2026, the first month after the cashbook ends.</p>
       </header>
 
-      <section class="certificate" aria-labelledby="sum-h">
-        <div class="cert-head">
-          <p class="script" id="sum-month"></p>
-          <h2 class="engraved" id="sum-h">Expected and spent</h2>
-        </div>
-        <ul class="counters">
-          <li class="counter"><b id="c-exp">–</b><span>Expected this month</span></li>
-          <li class="counter"><b id="c-log">–</b><span>Logged this month<small id="c-diff"></small></span></li>
-          <li class="counter"><b id="c-ylog">–</b><span>Logged this year</span></li>
-          <li class="counter"><b id="c-yexp">–</b><span>Expected per year</span></li>
-        </ul>
-      </section>
-
-      <section class="sec" aria-labelledby="cal-h">
-        <div class="sec-head">
-          <h2 class="engraved" id="cal-h">Expected expenses calendar</h2>
-          <p>Each month shows the expected cost, what has been logged against it, and the season's main activities. Choose a month to see it line by line.</p>
-        </div>
-        <ul class="cal" id="cal"></ul>
-        <div class="legend"><span>Logged, within expected</span><span class="o">Logged, over expected</span></div>
-      </section>
-
-      <section class="sec" aria-labelledby="det-h">
-        <div class="ledger">
-          <div class="ledger-title">
-            <p class="script" id="det-script"></p>
-            <h2 class="engraved" id="det-h">Expected against logged</h2>
-            <p>Typical amounts based on Oct 2024 – Sep 2026</p>
-          </div>
-          <div class="scroll">
-            <table class="lg">
-              <thead><tr><th>Expense</th><th>How often</th><th class="r">Expected</th><th class="r">Logged</th><th class="r">Left</th></tr></thead>
-              <tbody id="det-body"></tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      <section class="sec" aria-labelledby="xl-h">
-        <div class="sec-head">
-          <h2 class="engraved" id="xl-h">Excel file</h2>
-          <p>Connect an Excel file and every entry you save is written into it. Without a connected file, entries stay in this browser until you download them.</p>
-        </div>
-        <p class="file-state" id="file-state" role="status"><span class="dot" id="file-dot"></span><span id="file-text">No Excel file connected. Entries are kept in this browser.</span></p>
-        <div class="xl">
-          <button class="plate" id="xl-open" type="button">Open existing file</button>
-          <button class="plate" id="xl-new" type="button">Create new file</button>
-          <button class="plate" id="xl-download" type="button">Download (.xlsx)</button>
-          <label class="vh" for="xl-input">Choose an Excel file</label>
-          <input class="vh" id="xl-input" type="file" accept=".xlsx" tabindex="-1" />
-        </div>
-        <p class="xl-note" id="xl-note" role="status"></p>
-      </section>
-
-      <section class="sec" aria-labelledby="log-h">
+      <section class="sec sec--first" aria-labelledby="log-h">
         <div class="sec-head">
           <h2 class="engraved" id="log-h">Log an expense</h2>
+          <p>Record what was spent as it happens. It is written into your Excel file and counted against this month's expected costs below.</p>
         </div>
         <div class="two">
           <div class="form-sheet">
@@ -117,7 +59,61 @@
           </div>
         </div>
       </section>
-
+      <section class="sec sec--tight" aria-labelledby="xl-h">
+        <div class="sec-head">
+          <h2 class="engraved" id="xl-h">Excel file</h2>
+          <p>Connect an Excel file and every entry you save is written into it. Without a connected file, entries stay in this browser until you download them.</p>
+        </div>
+        <p class="file-state" id="file-state" role="status"><span class="dot" id="file-dot"></span><span id="file-text">No Excel file connected. Entries are kept in this browser.</span></p>
+        <div class="xl">
+          <button class="plate" id="xl-open" type="button">Open existing file</button>
+          <button class="plate" id="xl-new" type="button">Create new file</button>
+          <button class="plate" id="xl-download" type="button">Download (.xlsx)</button>
+          <label class="vh" for="xl-input">Choose an Excel file</label>
+          <input class="vh" id="xl-input" type="file" accept=".xlsx" tabindex="-1" />
+        </div>
+        <p class="xl-note" id="xl-note" role="status"></p>
+      </section>
+      <section class="certificate sec" id="forecast" aria-labelledby="sum-h">
+        <div class="cert-head">
+          <p class="script" id="sum-month"></p>
+          <h2 class="engraved" id="sum-h">Expected and spent</h2>
+          <div class="yearbar">
+            <button class="ghost" id="yr-prev" type="button" aria-label="Previous twelve months">Prev</button>
+            <span class="yr num" id="yr" aria-live="polite"></span>
+            <button class="ghost" id="yr-next" type="button" aria-label="Next twelve months">Next</button>
+          </div>
+        </div>
+        <ul class="counters">
+          <li class="counter"><b id="c-exp">–</b><span>Expected this month</span></li>
+          <li class="counter"><b id="c-log">–</b><span>Logged this month<small id="c-diff"></small></span></li>
+          <li class="counter"><b id="c-ylog">–</b><span>Logged over these 12 months</span></li>
+          <li class="counter"><b id="c-yexp">–</b><span>Expected over these 12 months</span></li>
+        </ul>
+      </section>
+      <section class="sec" aria-labelledby="cal-h">
+        <div class="sec-head">
+          <h2 class="engraved" id="cal-h">Expected expenses calendar</h2>
+          <p>Twelve months ahead, each with its expected cost, what has been logged against it so far, and the season's main activities. Choose a month to see it line by line.</p>
+        </div>
+        <ul class="cal" id="cal"></ul>
+        <div class="legend"><span>Logged, within expected</span><span class="o">Logged, over expected</span></div>
+      </section>
+      <section class="sec" aria-labelledby="det-h">
+        <div class="ledger">
+          <div class="ledger-title">
+            <p class="script" id="det-script"></p>
+            <h2 class="engraved" id="det-h">Expected against logged</h2>
+            <p>Typical amounts based on Oct 2024 – Sep 2026</p>
+          </div>
+          <div class="scroll">
+            <table class="lg">
+              <thead><tr><th>Expense</th><th>How often</th><th class="r">Expected</th><th class="r">Logged</th><th class="r">Left</th></tr></thead>
+              <tbody id="det-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
       <footer>Damana Estate · expected figures are estimates and will sharpen as real spending is logged</footer>
     </div>
     <script type="module" src="/src/estate/main.js"></script>
