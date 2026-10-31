@@ -163,3 +163,81 @@ footer{text-align:center;margin-top:3.5rem;padding-top:1.25rem;border-top:1px so
 .sec--tight .sec-head h2{font-size:clamp(1.4rem,3vw,1.9rem)}
 #forecast{margin-top:clamp(3rem,7vw,4.75rem)}
 #forecast .yearbar{margin-top:.9rem}
+
+/* ── How to use ── */
+.tut-btn{min-height:36px;padding:.4rem .85rem}
+.tut{width:min(30rem,calc(100vw - 32px));border:1px solid var(--line);border-top:3px solid var(--gold);border-radius:8px;padding:1.6rem 1.5rem 1.4rem;
+  background:linear-gradient(160deg,var(--navy-light),var(--navy));color:var(--off-white);box-shadow:0 24px 60px rgba(0,0,0,.55)}
+.tut::backdrop{background:rgba(4,12,24,.72)}
+.tut .engraved{font-size:1.75rem;margin:.3rem 0 .6rem}
+.tut p#tut-body{margin:0;color:var(--cream);line-height:1.65}
+.tut-dots{display:flex;gap:.4rem;margin:1.1rem 0}
+.tut-dots span{width:22px;height:3px;border-radius:2px;background:var(--navy-deep);box-shadow:inset 0 0 0 1px var(--line)}
+.tut-dots span.on{background:var(--gold)}
+.tut-actions{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center}
+.tut-actions .plate{margin-left:auto;min-height:40px;padding:.5rem 1.4rem}
+.ghost:disabled{opacity:.35;cursor:default}
+.tut-close{position:absolute;top:.5rem;right:.6rem;width:40px;height:40px;background:none;border:0;color:var(--muted);font-size:1.6rem;line-height:1}
+.tut-close:hover{color:var(--gold)}
+@keyframes flash{0%{box-shadow:0 0 0 3px var(--gold)}100%{box-shadow:0 0 0 3px transparent}}
+.flash{animation:flash 1.6s ease-out;border-radius:8px}
+
+/* ── Line by line toggle ── */
+.more summary{cursor:pointer;list-style:none;margin:0 clamp(1rem,3vw,1.75rem) .8rem;font-size:.72rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--gold)}
+.more summary::-webkit-details-marker{display:none}
+.more summary::before{content:'+';display:inline-block;width:1.1em;font-size:1rem;letter-spacing:0}
+.more[open] summary::before{content:'–'}
+.abbr{display:none}
+.lg--entries{min-width:420px}
+
+/* ── Phones: shorter, quieter, nothing to scroll sideways ── */
+@media (max-width:560px){
+  body{font-size:14px}
+  .mast{padding:1.25rem 0 .25rem}
+  .mast h1{font-size:2.1rem}
+  .mast .flourish,.mast .lede,.sec-head p,.ledger-title p:not(.script),.legend,.mo .logged,.mo .peaks,.mo .exp em,.counter .long,.lg .sw{display:none}
+  .sec{margin-top:2rem}
+  .sec--first{margin-top:.75rem}
+  .sec-head{margin-bottom:.9rem}
+  .sec-head h2{font-size:1.6rem}
+  .sec-head h2::before{margin-bottom:.5rem}
+  .form-sheet{padding:1.1rem 1rem}
+  .form-sheet h3{display:none}
+  form{gap:.8rem}
+  .row2{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .row2:nth-of-type(2){grid-template-columns:minmax(0,1fr)}
+  .plate{width:100%}
+  .xl{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
+  .xl .plate{padding:.6rem .5rem;font-size:.66rem;letter-spacing:.12em;min-height:44px}
+  .xl .plate:last-of-type{grid-column:1/-1}
+  .file-state{font-size:.82rem;margin-bottom:.8rem;flex-wrap:nowrap;justify-content:flex-start;text-align:left}
+  .certificate{padding:1rem .8rem}
+  .cert-head{margin-bottom:.8rem}
+  .counters{gap:.6rem}
+  .counter{padding:.85rem .4rem .75rem}
+  .counter b{font-size:1.75rem}
+  .counter span{font-size:.62rem;letter-spacing:.12em}
+  .yearbar{gap:.6rem}
+  .yearbar .yr{font-size:1.15rem}
+  .cal{grid-template-columns:repeat(3,minmax(0,1fr));gap:.5rem}
+  .mo{padding:.6rem .55rem .65rem;gap:.35rem;border-top-width:2px}
+  .mo:hover{transform:none}
+  .mo .full{display:none}
+  .mo .abbr{display:inline}
+  .mo .mname{font-size:.62rem;letter-spacing:.12em}
+  .mo .now{display:none}
+  .mo .exp{font-size:1.25rem}
+  .bar{height:4px}
+  .ledger{padding-top:1rem}
+  .ledger-title{padding-bottom:.6rem}
+  .ledger-title .engraved{font-size:1.35rem}
+  table.lg,.lg--entries{min-width:0}
+  .lg .c-how,.lg .c-left{display:none}
+  .lg th,.lg td{padding:.5rem .55rem}
+  .lg th:first-child,.lg td:first-child{padding-left:1rem}
+  .lg th:last-child,.lg td:last-child{padding-right:1rem}
+  .lg .nm{font-size:.86rem}
+  footer{margin-top:2rem}
+  .tut{padding:1.4rem 1.1rem 1.1rem}
+  .tut .engraved{font-size:1.5rem}
+}

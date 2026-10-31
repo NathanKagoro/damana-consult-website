@@ -136,8 +136,9 @@ function render() {
     b.className = 'mo'
     b.setAttribute('aria-pressed', i === sel ? 'true' : 'false')
     const isNow = i === idx(now.getFullYear(), now.getMonth())
-    b.innerHTML = `<span class="mname">${MONTHS[m]} ${y}${isNow ? '<span class="now">this month</span>' : ''}</span>
-      <span class="exp num">${fmt(e)}<em>expected</em></span>
+    b.setAttribute('aria-label', `${MONTHS[m]} ${y}: ${fmt(e)} expected, ${l ? fmt(l) + ' logged' : 'nothing logged'}`)
+    b.innerHTML = `<span class="mname"><span class="full">${MONTHS[m]} ${y}</span><span class="abbr">${SHORT[m]} ${String(y).slice(2)}</span>${isNow ? '<span class="now">this month</span>' : ''}</span>
+      <span class="exp num"><span class="full">${fmt(e)}</span><span class="abbr">${short(e)}</span><em>expected</em></span>
       <span class="bar" aria-hidden="true"><i style="width:${Math.min(100, (l / e) * 100)}%"${l > e ? ' class="over"' : ''}></i></span>
       <span class="logged num">${l ? fmt(l) + ' logged' : 'Nothing logged'}</span>
       <span class="peaks">${peaks.length ? peaks.join(' · ') : 'Steady running costs only'}</span>`
@@ -179,7 +180,7 @@ function render() {
         te += x
         tl += l
         const tr = document.createElement('tr')
-        tr.innerHTML = '<td><span class="nm"></span><span class="sw"></span></td><td></td><td class="r"></td><td class="r"></td><td class="r bal"></td>'
+        tr.innerHTML = '<td><span class="nm"></span><span class="sw"></span></td><td class="c-how"></td><td class="r"></td><td class="r"></td><td class="r bal c-left"></td>'
         tr.querySelector('.nm').textContent = it.name
         tr.querySelector('.sw').textContent = it.sw ? `${it.sw} · ${it.basis}` : ''
         tr.cells[1].textContent = it.how
@@ -193,7 +194,7 @@ function render() {
   }
   const tt = document.createElement('tr')
   tt.className = 'tot'
-  tt.innerHTML = '<td>Total</td><td></td><td class="r"></td><td class="r"></td><td class="r bal"></td>'
+  tt.innerHTML = '<td>Total</td><td class="c-how"></td><td class="r"></td><td class="r"></td><td class="r bal c-left"></td>'
   tt.cells[2].textContent = fmt(te)
   tt.cells[3].textContent = tl ? fmt(tl) : '–'
   if (tl) {
@@ -201,6 +202,7 @@ function render() {
     tt.cells[4].classList.add(te - tl < 0 ? 'over' : 'under')
   }
   body.append(tt)
+  $('det-sum').textContent = `Line by line · ${body.querySelectorAll('tr:not(.grp):not(.tot)').length} items`
 
   // entries for the month
   $('ent-h').textContent = `Entries for ${MONTHS[month]} ${year}`
@@ -442,6 +444,54 @@ $('f-date').min = '2026-10-01'
 if (!window.showOpenFilePicker) {
   $('xl-new').textContent = 'Download new file'
 }
+// ── tutorial ──
+const STEPS = [
+  { title: 'Log what you spend', body: 'Fill in the date, the expense and the amount, then tap Save entry. Pick the closest item in the list; use Other for anything unusual.', target: 'log-h' },
+  { title: 'Keep it in Excel', body: 'On a computer, in Chrome or Edge, tap Create new file once. Every entry is then written into that workbook. On a phone, tap Download to save it, and Open existing file to load it back.', target: 'xl-h' },
+  { title: 'Check this month', body: 'The summary compares what this month is expected to cost with what you have logged. Green means under the expected amount; red means over.', target: 'sum-h' },
+  { title: 'Plan ahead', body: 'The calendar covers the next twelve months from October 2026. Tap a month to see each expected cost. August is the heaviest month, mainly sisal processing.', target: 'cal-h' },
+]
+let step = 0
+const tut = $('tut')
+function showStep() {
+  const st = STEPS[step]
+  $('tut-count').textContent = `Step ${step + 1} of ${STEPS.length}`
+  $('tut-title').textContent = st.title
+  $('tut-body').textContent = st.body
+  $('tut-dots').innerHTML = STEPS.map((_, i) => `<span${i === step ? ' class="on"' : ''}></span>`).join('')
+  $('tut-back').disabled = step === 0
+  $('tut-next').textContent = step === STEPS.length - 1 ? 'Done' : 'Next'
+}
+$('tut-open').addEventListener('click', () => {
+  step = 0
+  showStep()
+  tut.showModal()
+})
+$('tut-back').addEventListener('click', () => {
+  step = Math.max(0, step - 1)
+  showStep()
+})
+$('tut-next').addEventListener('click', () => {
+  if (step === STEPS.length - 1) return tut.close()
+  step++
+  showStep()
+})
+$('tut-show').addEventListener('click', () => {
+  tut.close()
+  const el = $(STEPS[step].target).closest('section')
+  el.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' })
+  el.classList.remove('flash')
+  void el.offsetWidth
+  el.classList.add('flash')
+})
+$('tut-close').addEventListener('click', () => tut.close())
+tut.addEventListener('click', (e) => {
+  if (e.target === tut) tut.close()
+})
+
+// On a phone the line-by-line table starts folded away.
+if (matchMedia('(max-width: 560px)').matches) $('det-more').open = false
+
 resetDate()
 setFileState()
 render()
