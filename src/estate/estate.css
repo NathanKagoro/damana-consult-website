@@ -237,6 +237,9 @@ footer{text-align:center;margin-top:3.5rem;padding-top:1.25rem;border-top:1px so
   .lg th:first-child,.lg td:first-child{padding-left:1rem}
   .lg th:last-child,.lg td:last-child{padding-right:1rem}
   .lg .nm{font-size:.86rem}
+  .lg--entries td:first-child{white-space:nowrap;width:1%}
+  .lg--entries .del{padding:.2rem .3rem}
+  .lg--entries td:last-child{padding-left:.25rem}
   footer{margin-top:2rem}
   .tut{padding:1.4rem 1.1rem 1.1rem}
   .tut .engraved{font-size:1.5rem}
