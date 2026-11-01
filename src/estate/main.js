@@ -1,9 +1,10 @@
 // Damana Estate accounts: an expected-expenses calendar built from the
-// 2021–2026 cashbook, and an expense log kept in an Excel file.
+// 2021–2026 cashbook, an expense log with quantities, and harvest batches
+// that tie processing costs to what was cut, lost and sold.
 //
 // The page is static (GitHub Pages), so there is no server to save to.
-// Entries are kept in this browser (localStorage) and written into an .xlsx:
-// - Chrome and Edge on a computer can connect a file once; each entry saved
+// Everything is kept in this browser (localStorage) and written into an .xlsx:
+// - Chrome and Edge on a computer can connect a file once; each change made
 //   afterwards is written straight into it (File System Access API).
 // - Elsewhere, "Download" saves the workbook and "Open existing file" loads
 //   one back in.
@@ -19,11 +20,22 @@ import ITEMS from './items.json'
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 const SHORT = MONTHS.map((m) => m.slice(0, 3))
 const STORE = 'damana-estate-log-v1'
+const BATCH_STORE = 'damana-estate-batches-v1'
 const FILE_NAME = 'Damana_Estate_Expense_Log.xlsx'
 const OTHER = {
-  debt: { group: 'Other', name: 'Debt repayment' },
-  capital: { group: 'Other', name: 'Equipment / construction' },
-  other: { group: 'Other', name: 'Other' },
+  debt: { group: 'Other', name: 'Debt repayment', unit: '', rate: 0 },
+  capital: { group: 'Other', name: 'Equipment / construction', unit: '', rate: 0 },
+  other: { group: 'Other', name: 'Other', unit: '', rate: 0 },
+}
+
+// Benchmarks for a harvest batch, from the cashbook: the May 2025 batch gave
+// 15 kg of dry fibre per meta and sold at 2,300 TZS per kg. Processing is the
+// per-meta steps in items.json plus the cart, which is hired by the day and
+// came to about 4,000 TZS per meta (≈43,700 per meta in all).
+const BENCH = {
+  yield: 15,
+  price: 2300,
+  perMeta: ITEMS.filter((it) => it.unit === 'meta').reduce((s, it) => s + it.rate, 0) + 4000,
 }
 
 // The log starts in October 2026, the first month after the cashbook ends.
@@ -37,12 +49,18 @@ const now = new Date()
 const nowIdx = Math.max(0, idx(now.getFullYear(), now.getMonth()))
 let win = Math.floor(nowIdx / 12) // which run of twelve months is shown
 let sel = nowIdx // selected month, counted from October 2026
-let entries = load()
+let entries = load(STORE, (e) => e && e.id && e.date && e.amount)
+let batches = load(BATCH_STORE, (b) => b && b.id && b.start)
 let handle = null // connected Excel file, where the browser supports it
+let editing = null // id of the batch open in the form
 
 const $ = (id) => document.getElementById(id)
 const fmt = (n) => Math.round(n).toLocaleString('en-US')
+const fmt1 = (n) => (Math.round(n * 10) / 10).toLocaleString('en-US')
 const short = (n) => (n >= 1e6 ? (n / 1e6).toFixed(2).replace(/0$/, '') + 'M' : n >= 1e3 ? Math.round(n / 1e3) + 'k' : String(Math.round(n)))
+const pct = (n) => `${Math.round(n * 1000) / 10}%`
+const num = (v) => +String(v ?? '').replace(/[^\d.]/g, '') || 0
+const esc = (t) => String(t ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c])
 const expected = (it, m) => it.perYear * it.w[m]
 const monthExpected = (m) => ITEMS.reduce((s, it) => s + expected(it, m), 0)
 const yearExpected = ITEMS.reduce((s, it) => s + it.perYear, 0)
@@ -54,11 +72,26 @@ const loggedIn = (y, m) => entries.filter((e) => inMonth(e, y, m))
 const sum = (a) => a.reduce((s, e) => s + (+e.amount || 0), 0)
 const newId = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2))
 const pad = (n) => String(n).padStart(2, '0')
+const dayMonth = (d) => (d ? `${+d.slice(8, 10)} ${SHORT[+d.slice(5, 7) - 1]}` : '')
+const batchById = (id) => batches.find((b) => b.id === id)
 
-function load() {
+// "litre" → "litres"; meta and miraba stay as they are; mraba → miraba.
+function units(u, n) {
+  if (!u) return ''
+  if (n === 1 || u === 'meta' || u === 'kg' || /s$/.test(u) || u === 'miraba') return u
+  if (u === 'mraba') return 'miraba'
+  return u + 's'
+}
+const unitKey = (u) => {
+  const v = String(u || '').trim().toLowerCase()
+  if (v === 'miraba') return 'mraba'
+  return v.replace(/s$/, '')
+}
+
+function load(key, ok) {
   try {
-    const v = JSON.parse(localStorage.getItem(STORE) || '[]')
-    return Array.isArray(v) ? v.filter((e) => e && e.id && e.date && e.amount) : []
+    const v = JSON.parse(localStorage.getItem(key) || '[]')
+    return Array.isArray(v) ? v.filter(ok) : []
   } catch {
     return []
   }
@@ -66,6 +99,7 @@ function load() {
 function persist() {
   try {
     localStorage.setItem(STORE, JSON.stringify(entries))
+    localStorage.setItem(BATCH_STORE, JSON.stringify(batches))
   } catch {
     /* storage blocked: the Excel file is still the record */
   }
@@ -89,11 +123,229 @@ function persist() {
   sel.append(og)
 })()
 
+// The batch picker lists open batches first. Processing costs default to the
+// most recent open batch.
+function batchCode(b) {
+  return `${b.code}${b.block ? ' · ' + b.block : ''}`
+}
+function fillBatchSelect() {
+  const s = $('f-batch')
+  const keep = s.value
+  s.textContent = ''
+  s.append(new Option('Not linked to a harvest', ''))
+  const open = batches.filter((b) => econ(b).status !== 'Sold').sort((a, b) => b.start.localeCompare(a.start))
+  const done = batches.filter((b) => econ(b).status === 'Sold').sort((a, b) => b.start.localeCompare(a.start))
+  open.forEach((b) => s.append(new Option(batchCode(b), b.id)))
+  if (done.length) {
+    const og = document.createElement('optgroup')
+    og.label = 'Sold batches'
+    done.forEach((b) => og.append(new Option(batchCode(b), b.id)))
+    s.append(og)
+  }
+  if ([...s.options].some((o) => o.value === keep)) s.value = keep
+}
+
 function resetDate() {
   const { y, m } = ym(sel)
   const d = sel === idx(now.getFullYear(), now.getMonth()) ? now : new Date(y, m, 1)
   $('f-date').value = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 }
+
+// When an expense is chosen: suggest its unit, and for processing costs the
+// latest open harvest batch.
+$('f-item').addEventListener('change', () => {
+  const info = itemInfo($('f-item').value)
+  $('f-unit').value = info.unit ? units(info.unit, 2) : ''
+  if (info.group === 'Sisal processing' && !$('f-batch').value) {
+    const open = batches.filter((b) => econ(b).status !== 'Sold').sort((a, b) => b.start.localeCompare(a.start))
+    if (open[0]) $('f-batch').value = open[0].id
+  }
+  rateHint()
+})
+// Live cost per unit while typing, next to the expected rate.
+function rateHint() {
+  const info = itemInfo($('f-item').value)
+  const amount = num($('f-amt').value)
+  const qn = num($('f-qn').value)
+  const u = $('f-unit').value.trim()
+  const out = $('f-rate')
+  out.className = 'rate-hint'
+  if (!amount || !qn) {
+    out.textContent = info.rate ? `Expected rate ≈ ${fmt(info.rate)} per ${info.unit}` : ''
+    return
+  }
+  const r = amount / qn
+  const same = info.rate && unitKey(u) === unitKey(info.unit)
+  out.textContent = `${fmt(r)} per ${unitKey(u) || 'unit'}${same ? ` · expected ≈ ${fmt(info.rate)}` : ''}`
+  if (same) out.classList.add(r > info.rate * 1.1 ? 'over' : r < info.rate * 0.9 ? 'under' : 'ok')
+}
+;['f-amt', 'f-qn', 'f-unit'].forEach((id) => $(id).addEventListener('input', rateHint))
+
+// ── harvest economics ──
+function econ(b) {
+  const costs = entries.filter((e) => e.batch === b.id)
+  const total = sum(costs)
+  const meta = +b.meta || 0
+  const produced = +b.kg || 0
+  const lost = +b.lost || 0
+  const good = Math.max(0, produced - lost)
+  const sold = +b.sold || 0
+  const store = Math.max(0, good - sold)
+  const fibreRev = sold * (+b.price || 0)
+  const towRev = (+b.tow || 0) * (+b.towPrice || 0)
+  const revenue = fibreRev + towRev
+  const steps = {}
+  costs.forEach((e) => (steps[e.item] = (steps[e.item] || 0) + (+e.amount || 0)))
+  const status = sold && !store ? 'Sold' : sold ? 'Part sold' : good ? 'In store' : produced ? 'Processing' : meta ? 'Cutting' : 'Started'
+  return {
+    costs, total, meta, produced, lost, good, sold, store, revenue, towRev, steps, status,
+    perMeta: meta ? total / meta : 0,
+    perKg: produced ? total / produced : 0,
+    perKgSold: sold ? total / sold : 0,
+    yield: meta && produced ? produced / meta : 0,
+    loss: produced ? lost / produced : 0,
+    profit: revenue - total,
+    breakEven: good ? (total - towRev) / good : 0,
+    price: +b.price || 0,
+  }
+}
+
+function renderHarvests() {
+  const list = $('hv-list')
+  const tot = $('hv-totals')
+  list.textContent = ''
+  tot.textContent = ''
+  if (!batches.length) {
+    list.innerHTML = '<p class="hv-empty">No harvest batches yet. Start one when cutting begins, then link cutting, decorticating, washing and transport costs to it as you log them.</p>'
+    return
+  }
+  // all batches together
+  const E = batches.map(econ)
+  const T = E.reduce((a, e) => ({ meta: a.meta + e.meta, produced: a.produced + e.produced, lost: a.lost + e.lost, sold: a.sold + e.sold, revenue: a.revenue + e.revenue, total: a.total + e.total, fibreRev: a.fibreRev + (e.revenue - e.towRev) }), { meta: 0, produced: 0, lost: 0, sold: 0, revenue: 0, total: 0, fibreRev: 0 })
+  const tiles = [
+    ['Meta cut', T.meta ? fmt1(T.meta) : '–'],
+    ['Fibre produced', T.produced ? `${fmt(T.produced)} kg` : '–'],
+    ['Lost', T.produced ? pct(T.lost / T.produced) : '–'],
+    ['Cost per kg sold', T.sold ? fmt(T.total / T.sold) : '–'],
+    ['Average price per kg', T.sold ? fmt(T.fibreRev / T.sold) : '–'],
+    ['Profit on harvests', T.revenue || T.total ? (T.revenue - T.total < 0 ? `(${short(T.total - T.revenue)})` : short(T.revenue - T.total)) : '–'],
+  ]
+  tiles.forEach(([k, v], i) => {
+    const li = document.createElement('li')
+    li.innerHTML = `<b class="num"></b><span></span>`
+    li.querySelector('b').textContent = v
+    li.querySelector('span').textContent = k
+    if (i === 5 && T.revenue - T.total < 0) li.classList.add('neg')
+    tot.append(li)
+  })
+
+  batches
+    .slice()
+    .sort((a, b) => b.start.localeCompare(a.start))
+    .forEach((b) => {
+      const e = econ(b)
+      const card = document.createElement('article')
+      card.className = 'hv-card'
+      const cmp = (actual, bench, lowerIsGood) => {
+        if (!actual || !bench) return ''
+        const better = lowerIsGood ? actual <= bench : actual >= bench
+        return `<em class="${better ? 'under' : 'over'}">expected ${fmt(bench)}</em>`
+      }
+      const flow = [
+        ['Meta cut', e.meta ? fmt1(e.meta) : '–', ''],
+        ['Dry fibre', e.produced ? `${fmt(e.produced)} kg` : '–', e.yield ? `<em class="${e.yield >= BENCH.yield ? 'under' : 'over'}">${fmt1(e.yield)} kg per meta · expected ${BENCH.yield}</em>` : ''],
+        ['Lost', e.produced ? `${fmt(e.lost)} kg` : '–', e.lost ? `<em class="over">${pct(e.loss)}${b.why ? ' · ' + esc(b.why) : ''}</em>` : ''],
+        ['Sold', e.sold ? `${fmt(e.sold)} kg` : '–', e.sold && e.price ? `<em>at ${fmt(e.price)} per kg${b.buyer ? ' · ' + esc(b.buyer) : ''}</em>` : e.store ? `<em>${fmt(e.store)} kg in store</em>` : ''],
+      ]
+      const money = [
+        ['Costs linked', e.total ? fmt(e.total) : '–', `<em>${e.costs.length} ${e.costs.length === 1 ? 'entry' : 'entries'}</em>`],
+        ['Cost per meta', e.perMeta ? fmt(e.perMeta) : '–', cmp(e.perMeta, BENCH.perMeta, true)],
+        ['Cost per kg', e.perKg ? fmt(e.perKg) : '–', e.perKgSold ? `<em>${fmt(e.perKgSold)} per kg sold</em>` : ''],
+        ['Revenue', e.revenue ? fmt(e.revenue) : '–', e.towRev ? `<em>incl. ${fmt(e.towRev)} short fibre</em>` : ''],
+        ['Profit / (loss)', e.revenue ? (e.profit < 0 ? `(${fmt(-e.profit)})` : fmt(e.profit)) : '–', e.revenue && e.sold ? `<em>${e.profit / e.sold < 0 ? '(' + fmt(-e.profit / e.sold) + ')' : fmt(e.profit / e.sold)} per kg sold</em>` : ''],
+        ['Break-even price', e.breakEven ? `${fmt(e.breakEven)} / kg` : '–', e.breakEven && e.price ? `<em class="${e.price >= e.breakEven ? 'under' : 'over'}">selling at ${fmt(e.price)}</em>` : ''],
+      ]
+      const cell = ([k, v, sub], cls) => `<div class="${cls || ''}"><dt>${k}</dt><dd class="num">${v}</dd>${sub ? `<dd class="sub">${sub}</dd>` : ''}</div>`
+      const steps = Object.entries(e.steps).sort((a, b) => b[1] - a[1])
+      card.innerHTML = `
+        <header class="hv-head">
+          <div><p class="script">${esc(b.code)} · from ${dayMonth(b.start)} ${b.start.slice(0, 4)}</p><h3 class="engraved">${esc(b.block || 'Harvest batch')}</h3></div>
+          <span class="chip chip--${e.status.toLowerCase().replace(' ', '-')}">${e.status}</span>
+        </header>
+        <dl class="hv-flow">${flow.map((c) => cell(c)).join('')}</dl>
+        <dl class="hv-money">${money.map((c) => cell(c)).join('')}</dl>
+        ${steps.length ? `<details class="more hv-steps"><summary>Cost by step · ${steps.length}</summary><table class="lg"><thead><tr><th>Step</th><th class="r">Cost</th><th class="r">Per meta</th><th class="r">Share</th></tr></thead><tbody>${steps.map(([k, v]) => `<tr><td>${esc(k)}</td><td class="r">${fmt(v)}</td><td class="r">${e.meta ? fmt(v / e.meta) : '–'}</td><td class="r">${pct(v / e.total)}</td></tr>`).join('')}</tbody></table></details>` : '<p class="hint">No costs linked yet. Choose this batch under Harvest batch when you log cutting, decorticating, washing or transport.</p>'}
+        ${b.notes ? `<p class="hint">${esc(b.notes)}</p>` : ''}
+        <div class="hv-actions"><button class="ghost" type="button" data-act="edit">Update batch</button><button class="del" type="button" data-act="del">Delete</button></div>`
+      card.querySelector('[data-act="edit"]').addEventListener('click', () => openBatch(b.id))
+      const del = card.querySelector('[data-act="del"]')
+      del.addEventListener('click', async () => {
+        if (!del.classList.contains('confirm')) {
+          del.classList.add('confirm')
+          del.textContent = 'Confirm delete'
+          setTimeout(() => {
+            del.classList.remove('confirm')
+            del.textContent = 'Delete'
+          }, 4000)
+          return
+        }
+        batches = batches.filter((x) => x.id !== b.id)
+        entries = entries.map((x) => (x.batch === b.id ? { ...x, batch: '' } : x))
+        persist()
+        renderAll()
+        await sync()
+      })
+      list.append(card)
+    })
+}
+
+// ── batch form ──
+const bd = $('bd')
+const BF = { start: 'b-start', meta: 'b-meta', block: 'b-block', kg: 'b-kg', lost: 'b-lost', why: 'b-why', sold: 'b-sold', price: 'b-price', buyer: 'b-buyer', saleDate: 'b-sdate', tow: 'b-tow', towPrice: 'b-towp', notes: 'b-notes' }
+const NUMERIC = ['meta', 'kg', 'lost', 'sold', 'price', 'tow', 'towPrice']
+function openBatch(id) {
+  editing = id || null
+  const b = id ? batchById(id) : null
+  $('bd-kicker').textContent = b ? `${b.code} · update` : 'New batch'
+  $('bd-title').textContent = b ? b.block || 'Harvest batch' : 'Harvest batch'
+  for (const [k, el] of Object.entries(BF)) {
+    const v = b ? b[k] : ''
+    $(el).value = v === undefined || v === null || v === 0 ? '' : NUMERIC.includes(k) ? fmt1(v) : v
+  }
+  if (!b) $('b-start').value = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
+  $('b-status').textContent = ''
+  bd.showModal()
+}
+$('hv-new').addEventListener('click', () => openBatch(null))
+$('b-cancel').addEventListener('click', () => bd.close())
+$('bd-close').addEventListener('click', () => bd.close())
+bd.addEventListener('click', (e) => {
+  if (e.target === bd) bd.close()
+})
+$('bf').addEventListener('submit', async (ev) => {
+  ev.preventDefault()
+  const st = $('b-status')
+  const v = {}
+  for (const [k, el] of Object.entries(BF)) v[k] = NUMERIC.includes(k) ? num($(el).value) : $(el).value.trim()
+  const fail = (t) => {
+    st.textContent = t
+    st.className = 'status err'
+  }
+  if (!v.start) return fail('Add the date cutting started.')
+  if (v.lost > v.kg && v.kg) return fail('Lost fibre cannot be more than the fibre produced.')
+  if (v.sold > v.kg - v.lost && v.kg) return fail(`Sold is more than the ${fmt(v.kg - v.lost)} kg left after losses. Check the figures.`)
+  if (v.sold && !v.price) return fail('Add the price per kg for the fibre sold.')
+  if (editing) {
+    batches = batches.map((b) => (b.id === editing ? { ...b, ...v } : b))
+  } else {
+    const n = batches.reduce((m, b) => Math.max(m, +String(b.code).replace(/\D/g, '') || 0), 0) + 1
+    batches.push({ id: newId(), code: `H${n}`, ...v, createdAt: new Date().toISOString() })
+  }
+  persist()
+  bd.close()
+  renderAll()
+  await sync()
+})
 
 // ── render ──
 function render() {
@@ -151,12 +403,21 @@ function render() {
     cal.append(li)
   }
 
-  // month detail
+  // month detail: expected against logged, with the real cost per unit
   $('det-script').textContent = `${MONTHS[month]} ${year}`
   const body = $('det-body')
   body.textContent = ''
   const loggedBy = {}
-  logs.forEach((e) => (loggedBy[e.itemId] = (loggedBy[e.itemId] || 0) + (+e.amount || 0)))
+  const qtyBy = {}
+  logs.forEach((e) => {
+    loggedBy[e.itemId] = (loggedBy[e.itemId] || 0) + (+e.amount || 0)
+    const info = itemInfo(e.itemId)
+    if (e.qn && info.unit && unitKey(e.unit) === unitKey(info.unit)) {
+      const q = (qtyBy[e.itemId] ||= { qn: 0, amt: 0 })
+      q.qn += +e.qn
+      q.amt += +e.amount
+    }
+  })
   const groups = {}
   ITEMS.forEach((it) => {
     const x = expected(it, month)
@@ -180,9 +441,16 @@ function render() {
         te += x
         tl += l
         const tr = document.createElement('tr')
-        tr.innerHTML = '<td><span class="nm"></span><span class="sw"></span></td><td class="c-how"></td><td class="r"></td><td class="r"></td><td class="r bal c-left"></td>'
+        tr.innerHTML = '<td><span class="nm"></span><span class="sw"></span><span class="rate"></span></td><td class="c-how"></td><td class="r"></td><td class="r"></td><td class="r bal c-left"></td>'
         tr.querySelector('.nm').textContent = it.name
         tr.querySelector('.sw').textContent = it.sw ? `${it.sw} · ${it.basis}` : ''
+        const q = qtyBy[it.id]
+        if (q) {
+          const r = q.amt / q.qn
+          const rate = tr.querySelector('.rate')
+          rate.textContent = `${fmt1(q.qn)} ${units(it.unit, q.qn)} at ${fmt(r)} each · expected ${fmt(it.rate)}`
+          rate.classList.add(r > it.rate * 1.1 ? 'over' : r < it.rate * 0.9 ? 'under' : 'ok')
+        }
         tr.cells[1].textContent = it.how
         tr.cells[2].textContent = fmt(x)
         tr.cells[3].textContent = l ? fmt(l) : '–'
@@ -221,9 +489,11 @@ function render() {
     .forEach((e) => {
       const tr = document.createElement('tr')
       tr.innerHTML = '<td class="num"></td><td><span class="nm"></span><span class="sw"></span></td><td class="r"></td><td class="r"><button type="button" class="del">Delete</button></td>'
-      tr.cells[0].textContent = `${+e.date.slice(8, 10)} ${SHORT[+e.date.slice(5, 7) - 1]}`
+      tr.cells[0].textContent = dayMonth(e.date)
       tr.querySelector('.nm').textContent = e.item
-      tr.querySelector('.sw').textContent = [e.qty, e.note, e.method].filter(Boolean).join(' · ')
+      const b = e.batch && batchById(e.batch)
+      const q = e.qn ? `${fmt1(e.qn)} ${units(e.unit, e.qn)} · ${fmt(e.amount / e.qn)} each` : e.qty
+      tr.querySelector('.sw').textContent = [q, b ? b.code : '', e.note, e.method].filter(Boolean).join(' · ')
       tr.cells[2].textContent = fmt(e.amount)
       const btn = tr.querySelector('.del')
       btn.addEventListener('click', async () => {
@@ -238,20 +508,39 @@ function render() {
         }
         entries = entries.filter((x) => x.id !== e.id)
         persist()
-        render()
+        renderAll()
         await sync()
       })
       eb.append(tr)
     })
 }
 
+function renderAll() {
+  fillBatchSelect()
+  renderHarvests()
+  render()
+}
+
 // ── workbook ──
 function buildWorkbook() {
-  const rows = [['ID', 'Date', 'Group', 'Expense', 'Amount (TZS)', 'Paid by', 'Quantity', 'Note', 'Item code']]
+  const rows = [['ID', 'Date', 'Group', 'Expense', 'Amount (TZS)', 'Quantity', 'Unit', 'Cost per unit (TZS)', 'Expected per unit (TZS)', 'Harvest batch', 'Paid by', 'Note', 'Item code', 'Batch ID']]
   entries
     .slice()
     .sort((a, b) => a.date.localeCompare(b.date))
-    .forEach((e) => rows.push([e.id, e.date, e.group, e.item, +e.amount, e.method, e.qty || '', e.note || '', e.itemId]))
+    .forEach((e) => {
+      const info = itemInfo(e.itemId)
+      const b = e.batch && batchById(e.batch)
+      rows.push([e.id, e.date, e.group, e.item, +e.amount, e.qn || e.qty || '', e.qn ? e.unit || '' : '', e.qn ? Math.round(e.amount / e.qn) : '', info.rate && unitKey(e.unit) === unitKey(info.unit) ? info.rate : '', b ? batchCode(b) : '', e.method, e.note || '', e.itemId, e.batch || ''])
+    })
+  const hv = [['ID', 'Code', 'Cutting started', 'Block or field', 'Meta cut', 'Dry fibre produced (kg)', 'Lost or rejected (kg)', 'Why lost', 'Fibre sold (kg)', 'Price per kg (TZS)', 'Buyer', 'Sale date', 'Short fibre sold (kg)', 'Short fibre price per kg (TZS)', 'Notes', 'Status', 'Costs linked (TZS)', 'Cost per meta (TZS)', 'Kg per meta', 'Loss (%)', 'Cost per kg produced (TZS)', 'Cost per kg sold (TZS)', 'Revenue (TZS)', 'Profit or loss (TZS)', 'Break-even price per kg (TZS)']]
+  batches
+    .slice()
+    .sort((a, b) => a.start.localeCompare(b.start))
+    .forEach((b) => {
+      const e = econ(b)
+      const r = (n) => (n ? Math.round(n) : '')
+      hv.push([b.id, b.code, b.start, b.block || '', b.meta || '', b.kg || '', b.lost || '', b.why || '', b.sold || '', b.price || '', b.buyer || '', b.saleDate || '', b.tow || '', b.towPrice || '', b.notes || '', e.status, r(e.total), r(e.perMeta), e.yield ? Math.round(e.yield * 10) / 10 : '', e.produced ? Math.round(e.loss * 1000) / 10 : '', r(e.perKg), r(e.perKgSold), r(e.revenue), e.revenue ? Math.round(e.profit) : '', r(e.breakEven)])
+    })
   const last = Math.max(nowIdx, win * 12 + 11, ...entries.map((e) => idx(+e.date.slice(0, 4), +e.date.slice(5, 7) - 1)))
   const months = [['Month', 'Expected (TZS)', 'Logged (TZS)', 'Difference (TZS)']]
   for (let i = 0; i <= last; i++) {
@@ -260,44 +549,58 @@ function buildWorkbook() {
     const l = sum(loggedIn(y, m))
     months.push([label(i), x, l, x - l])
   }
-  const exp = [['Group', 'Expense', 'Swahili in cashbook', 'Typical cost each time (TZS)', 'Basis', 'How often', 'Expected per year (TZS)', ...SHORT]]
-  ITEMS.forEach((it) => exp.push([it.group, it.name, it.sw, it.cost, it.basis, it.how, Math.round(it.perYear), ...it.w.map((w) => Math.round(it.perYear * w))]))
+  const exp = [['Group', 'Expense', 'Swahili in cashbook', 'Typical cost each time (TZS)', 'Unit', 'Expected per unit (TZS)', 'Basis', 'How often', 'Expected per year (TZS)', ...SHORT]]
+  ITEMS.forEach((it) => exp.push([it.group, it.name, it.sw, it.cost, it.unit, it.rate || '', it.basis, it.how, Math.round(it.perYear), ...it.w.map((w) => Math.round(it.perYear * w))]))
   const wb = XLSX.utils.book_new()
-  const s1 = XLSX.utils.aoa_to_sheet(rows)
-  s1['!cols'] = [{ wch: 10 }, { wch: 12 }, { wch: 16 }, { wch: 30 }, { wch: 14 }, { wch: 14 }, { wch: 16 }, { wch: 40 }, { wch: 10 }]
-  const s2 = XLSX.utils.aoa_to_sheet(months)
-  s2['!cols'] = [{ wch: 16 }, { wch: 16 }, { wch: 16 }, { wch: 16 }]
-  const s3 = XLSX.utils.aoa_to_sheet(exp)
-  s3['!cols'] = [{ wch: 16 }, { wch: 30 }, { wch: 26 }, { wch: 14 }, { wch: 30 }, { wch: 20 }, { wch: 14 }]
-  XLSX.utils.book_append_sheet(wb, s1, 'Logged expenses')
-  XLSX.utils.book_append_sheet(wb, s2, 'By month')
-  XLSX.utils.book_append_sheet(wb, s3, 'Expected by month')
+  const add = (aoa, name, cols) => {
+    const s = XLSX.utils.aoa_to_sheet(aoa)
+    s['!cols'] = cols.map((wch) => ({ wch }))
+    XLSX.utils.book_append_sheet(wb, s, name)
+  }
+  add(rows, 'Logged expenses', [10, 12, 16, 30, 14, 10, 10, 14, 14, 22, 14, 40, 10, 10])
+  add(hv, 'Harvest batches', [10, 6, 12, 22, 9, 12, 12, 18, 12, 12, 18, 12, 12, 12, 30, 10, 14, 12, 10, 8, 14, 14, 14, 14, 14])
+  add(months, 'By month', [16, 16, 16, 16])
+  add(exp, 'Expected by month', [16, 30, 26, 14, 10, 12, 30, 20, 14])
   return XLSX.write(wb, { type: 'array', bookType: 'xlsx' })
+}
+
+function cellDate(v) {
+  if (typeof v === 'number') {
+    const p = XLSX.SSF.parse_date_code(v)
+    return `${p.y}-${pad(p.m)}-${pad(p.d)}`
+  }
+  return String(v || '').slice(0, 10)
 }
 
 function readWorkbook(buf) {
   const wb = XLSX.read(buf, { type: 'array' })
   const ws = wb.Sheets['Logged expenses']
   if (!ws) throw new Error('This file has no "Logged expenses" sheet.')
-  return XLSX.utils.sheet_to_json(ws, { defval: '' }).flatMap((r) => {
-    let date = r.Date
-    if (typeof date === 'number') {
-      const p = XLSX.SSF.parse_date_code(date)
-      date = `${p.y}-${pad(p.m)}-${pad(p.d)}`
-    }
-    date = String(date).slice(0, 10)
-    const amount = +String(r['Amount (TZS)']).replace(/[^\d.]/g, '')
+  const fileEntries = XLSX.utils.sheet_to_json(ws, { defval: '' }).flatMap((r) => {
+    const date = cellDate(r.Date)
+    const amount = num(r['Amount (TZS)'])
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !amount) return []
     const itemId = r['Item code'] || byName[String(r.Expense).toLowerCase()] || 'other'
     const info = itemInfo(itemId)
-    return [{ id: String(r.ID || newId()), date, itemId, item: r.Expense || info.name, group: r.Group || info.group, amount, method: r['Paid by'] || '', qty: String(r.Quantity || ''), note: String(r.Note || ''), createdAt: '' }]
+    const qRaw = r.Quantity
+    const qn = typeof qRaw === 'number' ? qRaw : /^[\d.,\s]+$/.test(String(qRaw)) ? num(qRaw) : 0
+    return [{ id: String(r.ID || newId()), date, itemId, item: r.Expense || info.name, group: r.Group || info.group, amount, qn, unit: qn ? String(r.Unit || info.unit || '') : '', qty: qn ? '' : String(qRaw || ''), batch: String(r['Batch ID'] || ''), method: r['Paid by'] || '', note: String(r.Note || ''), createdAt: '' }]
   })
+  const hs = wb.Sheets['Harvest batches']
+  const fileBatches = hs
+    ? XLSX.utils.sheet_to_json(hs, { defval: '' }).flatMap((r) => {
+        const start = cellDate(r['Cutting started'])
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(start)) return []
+        return [{ id: String(r.ID || newId()), code: String(r.Code || 'H?'), start, block: String(r['Block or field'] || ''), meta: num(r['Meta cut']), kg: num(r['Dry fibre produced (kg)']), lost: num(r['Lost or rejected (kg)']), why: String(r['Why lost'] || ''), sold: num(r['Fibre sold (kg)']), price: num(r['Price per kg (TZS)']), buyer: String(r.Buyer || ''), saleDate: r['Sale date'] ? cellDate(r['Sale date']) : '', tow: num(r['Short fibre sold (kg)']), towPrice: num(r['Short fibre price per kg (TZS)']), notes: String(r.Notes || '') }]
+      })
+    : []
+  return { fileEntries, fileBatches }
 }
 
 function setFileState() {
   const on = !!handle
   $('file-dot').classList.toggle('on', on)
-  $('file-text').innerHTML = on ? `Connected to <b></b>. Each entry you save is written into this file.` : 'No Excel file connected. Entries are kept in this browser.'
+  $('file-text').innerHTML = on ? `Connected to <b></b>. Each change you save is written into this file.` : 'No Excel file connected. Entries are kept in this browser.'
   if (on) $('file-text').querySelector('b').textContent = handle.name
 }
 const note = (t, err) => {
@@ -315,14 +618,14 @@ async function writeToHandle() {
   await w.close()
 }
 
-// Write the log into the connected file, if there is one.
+// Write everything into the connected file, if there is one.
 async function sync() {
   if (!handle) return
   try {
     await writeToHandle()
     note(`Saved to ${handle.name}.`)
   } catch (e) {
-    note(e.code === 'permission' ? `${handle.name} was not updated: permission to edit it was refused. Choose Open existing file to reconnect.` : `${handle.name} could not be updated. If it is open in Excel, close it and save the entry again.`, true)
+    note(e.code === 'permission' ? `${handle.name} was not updated: permission to edit it was refused. Choose Open existing file to reconnect.` : `${handle.name} could not be updated. If it is open in Excel, close it and save again.`, true)
   }
 }
 
@@ -338,14 +641,19 @@ function download() {
   note(`${FILE_NAME} downloaded.`)
 }
 
-function merge(fromFile) {
-  const ids = new Set(fromFile.map((e) => e.id))
-  const added = entries.filter((e) => !ids.has(e.id))
-  entries = [...fromFile, ...added]
+// The file wins for anything it holds; anything only in this browser is kept.
+function merge({ fileEntries, fileBatches }) {
+  const eIds = new Set(fileEntries.map((e) => e.id))
+  const bIds = new Set(fileBatches.map((b) => b.id))
+  const extraE = entries.filter((e) => !eIds.has(e.id))
+  const extraB = batches.filter((b) => !bIds.has(b.id))
+  entries = [...fileEntries, ...extraE]
+  batches = [...fileBatches, ...extraB]
   persist()
-  render()
-  return added.length
+  renderAll()
+  return extraE.length + extraB.length
 }
+const loaded = ({ fileEntries, fileBatches }) => `${fileEntries.length} ${fileEntries.length === 1 ? 'entry' : 'entries'}${fileBatches.length ? ` and ${fileBatches.length} harvest ${fileBatches.length === 1 ? 'batch' : 'batches'}` : ''}`
 
 const xlTypes = [{ description: 'Excel workbook', accept: { 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'] } }]
 
@@ -356,11 +664,11 @@ $('xl-open').addEventListener('click', async () => {
   }
   try {
     const [h] = await window.showOpenFilePicker({ types: xlTypes })
-    const fromFile = readWorkbook(await (await h.getFile()).arrayBuffer())
+    const data = readWorkbook(await (await h.getFile()).arrayBuffer())
     handle = h
-    const extra = merge(fromFile)
+    const extra = merge(data)
     setFileState()
-    note(`Loaded ${fromFile.length} ${fromFile.length === 1 ? 'entry' : 'entries'} from ${h.name}.${extra ? ` Adding ${extra} from this browser.` : ''}`)
+    note(`Loaded ${loaded(data)} from ${h.name}.${extra ? ` Adding ${extra} more from this browser.` : ''}`)
     if (extra) await sync()
   } catch (e) {
     if (e.name !== 'AbortError') note(e.message.includes('Logged expenses') ? e.message : 'That file could not be read as an Excel workbook.', true)
@@ -372,9 +680,9 @@ $('xl-input').addEventListener('change', async (ev) => {
   ev.target.value = ''
   if (!file) return
   try {
-    const fromFile = readWorkbook(await file.arrayBuffer())
-    merge(fromFile)
-    note(`Loaded ${fromFile.length} ${fromFile.length === 1 ? 'entry' : 'entries'} from ${file.name}. This browser cannot write back to the file, so use Download after adding entries.`)
+    const data = readWorkbook(await file.arrayBuffer())
+    merge(data)
+    note(`Loaded ${loaded(data)} from ${file.name}. This browser cannot write back to the file, so use Download after making changes.`)
   } catch (e) {
     note(e.message.includes('Logged expenses') ? e.message : 'That file could not be read as an Excel workbook.', true)
   }
@@ -383,14 +691,14 @@ $('xl-input').addEventListener('change', async (ev) => {
 $('xl-new').addEventListener('click', async () => {
   if (!window.showSaveFilePicker) {
     download()
-    note(`${FILE_NAME} downloaded. This browser cannot keep a file connected, so download again after adding entries.`)
+    note(`${FILE_NAME} downloaded. This browser cannot keep a file connected, so download again after making changes.`)
     return
   }
   try {
     handle = await window.showSaveFilePicker({ suggestedName: FILE_NAME, types: xlTypes })
     await writeToHandle()
     setFileState()
-    note(`Created ${handle.name}. New entries will be written into it.`)
+    note(`Created ${handle.name}. New entries and batches will be written into it.`)
   } catch (e) {
     if (e.name !== 'AbortError') note('The file could not be created. Try again, or use Download.', true)
   }
@@ -400,7 +708,7 @@ $('xl-download').addEventListener('click', download)
 
 // ── save an entry ──
 $('f-amt').addEventListener('blur', (e) => {
-  const n = +String(e.target.value).replace(/[^\d.]/g, '')
+  const n = num(e.target.value)
   if (n) e.target.value = fmt(n)
 })
 $('f').addEventListener('submit', async (ev) => {
@@ -408,7 +716,9 @@ $('f').addEventListener('submit', async (ev) => {
   const st = $('f-status')
   const date = $('f-date').value
   const itemId = $('f-item').value
-  const amount = +String($('f-amt').value).replace(/[^\d.]/g, '')
+  const amount = num($('f-amt').value)
+  const qn = num($('f-qn').value)
+  const unit = $('f-unit').value.trim()
   const fail = (t) => {
     st.textContent = t
     st.className = 'status err'
@@ -416,18 +726,21 @@ $('f').addEventListener('submit', async (ev) => {
   if (!date) return fail('Add the date the money was spent.')
   if (!itemId) return fail('Choose which expense this was.')
   if (!amount) return fail('Enter the amount in shillings.')
+  if (qn && !unit) return fail('Add a unit for the quantity, such as acres, litres or meta.')
   if (idx(+date.slice(0, 4), +date.slice(5, 7) - 1) < 0) return fail('The log starts in October 2026. Earlier spending is in the cashbook.')
   const info = itemInfo(itemId)
-  entries.push({ id: newId(), date, itemId, item: info.name, group: info.group, amount, method: $('f-method').value, qty: $('f-qty').value.trim(), note: $('f-note').value.trim(), createdAt: new Date().toISOString() })
+  entries.push({ id: newId(), date, itemId, item: info.name, group: info.group, amount, qn, unit: qn ? unit : '', qty: '', batch: $('f-batch').value, method: $('f-method').value, note: $('f-note').value.trim(), createdAt: new Date().toISOString() })
   persist()
-  st.textContent = `Saved: ${info.name}, ${fmt(amount)} TZS.${handle ? '' : ' Download the Excel file to keep a copy.'}`
+  const b = $('f-batch').value && batchById($('f-batch').value)
+  st.textContent = `Saved: ${info.name}, ${fmt(amount)} TZS${qn ? ` for ${fmt1(qn)} ${units(unit, qn)}` : ''}${b ? `, linked to ${b.code}` : ''}.${handle ? '' : ' Download the Excel file to keep a copy.'}`
   st.className = 'status'
   $('f-amt').value = ''
-  $('f-qty').value = ''
+  $('f-qn').value = ''
   $('f-note').value = ''
+  rateHint()
   sel = idx(+date.slice(0, 4), +date.slice(5, 7) - 1)
   win = Math.floor(sel / 12)
-  render()
+  renderAll()
   await sync()
 })
 
@@ -444,12 +757,14 @@ $('f-date').min = '2026-10-01'
 if (!window.showOpenFilePicker) {
   $('xl-new').textContent = 'Download new file'
 }
+
 // ── tutorial ──
 const STEPS = [
-  { title: 'Log what you spend', body: 'Fill in the date, the expense and the amount, then tap Save entry. Pick the closest item in the list; use Other for anything unusual.', target: 'log-h' },
-  { title: 'Keep it in Excel', body: 'On a computer, in Chrome or Edge, tap Create new file once. Every entry is then written into that workbook. On a phone, tap Download to save it, and Open existing file to load it back.', target: 'xl-h' },
-  { title: 'Check this month', body: 'The summary compares what this month is expected to cost with what you have logged. Green means under the expected amount; red means over.', target: 'sum-h' },
-  { title: 'Plan ahead', body: 'The calendar covers the next twelve months from October 2026. Tap a month to see each expected cost. August is the heaviest month, mainly sisal processing.', target: 'cal-h' },
+  { title: 'Log what you spend', body: 'Fill in the date, the expense and the amount. Add the quantity it paid for, such as 5 acres or 20 litres, and the page shows the cost per unit against the expected rate.', target: 'log-h' },
+  { title: 'Keep it in Excel', body: 'On a computer, in Chrome or Edge, tap Create new file once. Every change is then written into that workbook. On a phone, tap Download to save it, and Open existing file to load it back.', target: 'xl-h' },
+  { title: 'Track each harvest', body: 'Start a batch when cutting begins and record the meta cut. Link processing costs to it as you log them. When the fibre is weighed and sold, update the batch with the kilos produced, lost and sold, and the price.', target: 'hv-h' },
+  { title: 'Read the unit economics', body: 'Each batch shows its cost per meta and per kilo, the share lost, profit and the break-even price, set against the cashbook benchmarks: 15 kg of fibre per meta and about 43,700 TZS of processing per meta.', target: 'hv-h' },
+  { title: 'Plan ahead', body: 'The calendar covers the twelve months from October 2026. Tap a month to see each expected cost line by line, with the real cost per unit wherever you logged a quantity.', target: 'cal-h' },
 ]
 let step = 0
 const tut = $('tut')
@@ -494,4 +809,5 @@ if (matchMedia('(max-width: 560px)').matches) $('det-more').open = false
 
 resetDate()
 setFileState()
-render()
+renderAll()
+rateHint()

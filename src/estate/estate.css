@@ -205,7 +205,7 @@ footer{text-align:center;margin-top:3.5rem;padding-top:1.25rem;border-top:1px so
   .form-sheet h3{display:none}
   form{gap:.8rem}
   .row2{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
-  .row2:nth-of-type(2){grid-template-columns:minmax(0,1fr)}
+  .row2.row-stack{grid-template-columns:minmax(0,1fr)}
   .plate{width:100%}
   .xl{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
   .xl .plate{padding:.6rem .5rem;font-size:.66rem;letter-spacing:.12em;min-height:44px}
@@ -243,4 +243,74 @@ footer{text-align:center;margin-top:3.5rem;padding-top:1.25rem;border-top:1px so
   footer{margin-top:2rem}
   .tut{padding:1.4rem 1.1rem 1.1rem}
   .tut .engraved{font-size:1.5rem}
+}
+
+/* ── Cost per unit ── */
+.rate-hint{margin:-.35rem 0 0;min-height:1.2em;font-size:.82rem;color:var(--muted)}
+.rate-hint.ok{color:var(--cream)} .rate-hint.over{color:var(--over)} .rate-hint.under{color:var(--good)}
+.lg .rate{display:block;font-size:.8rem;margin-top:.15rem;color:var(--cream)}
+.lg .rate:empty{display:none}
+.lg .rate.over{color:var(--over)} .lg .rate.under{color:var(--good)}
+.hint{margin:.6rem 0 0;font-size:.85rem;color:var(--muted)}
+
+/* ── Harvests ── */
+.hv-top{display:flex;justify-content:center;margin-bottom:1.25rem}
+.hv-totals{list-style:none;margin:0 0 1.25rem;padding:0;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:.75rem}
+.hv-totals:empty{display:none}
+.hv-totals li{display:flex;flex-direction:column;align-items:center;text-align:center;gap:.3rem;padding:.9rem .5rem;border-radius:8px;
+  background:linear-gradient(145deg,var(--navy-light),var(--navy));box-shadow:var(--shadow-inset),inset 0 0 0 1px rgba(201,168,76,.2)}
+.hv-totals b{font-family:var(--font-display);font-weight:700;font-size:1.55rem;line-height:1;color:var(--gold);font-variant-numeric:lining-nums tabular-nums}
+.hv-totals li.neg b{color:var(--over)}
+.hv-totals span{font-size:.64rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);line-height:1.35}
+.hv-list{display:grid;gap:1.1rem}
+.hv-empty{margin:0 auto;max-width:36rem;text-align:center;color:var(--muted);padding:1.5rem 1rem;border:1px dashed var(--line);border-radius:8px}
+.hv-card{background:linear-gradient(160deg,rgba(26,53,96,.9),rgba(11,31,58,.95));border-top:3px solid var(--gold);border-radius:8px;
+  box-shadow:0 8px 32px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.07);padding:1.25rem clamp(1rem,3vw,1.6rem) 1.1rem;min-width:0}
+.hv-head{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:1rem}
+.hv-head .engraved{font-size:1.6rem;margin-top:.2rem}
+.chip{flex:none;font-size:.66rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;padding:.3rem .6rem;border-radius:3px;border:1px solid var(--gold);color:var(--gold)}
+.chip--sold{background:var(--good);border-color:var(--good);color:var(--navy)}
+.chip--in-store,.chip--part-sold{background:var(--gold);color:var(--navy)}
+.hv-flow,.hv-money{margin:0;display:grid;gap:.6rem}
+.hv-flow{grid-template-columns:repeat(4,minmax(0,1fr));position:relative;padding-bottom:.9rem;margin-bottom:.9rem;border-bottom:1px solid var(--line)}
+.hv-money{grid-template-columns:repeat(6,minmax(0,1fr))}
+.hv-flow > div,.hv-money > div{min-width:0;padding:.6rem .7rem;border-radius:6px;background:rgba(7,21,39,.45);box-shadow:var(--shadow-inset)}
+.hv-flow > div{position:relative}
+.hv-flow > div:not(:last-child)::after{content:'';position:absolute;right:-.45rem;top:50%;width:.3rem;height:.3rem;border-top:1px solid var(--gold);border-right:1px solid var(--gold);transform:translateY(-50%) rotate(45deg)}
+.hv-card dt{font-size:.62rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
+.hv-card dd{margin:0}
+.hv-card dd.num{font-family:var(--font-display);font-weight:700;font-size:1.35rem;line-height:1.2;color:var(--off-white);font-variant-numeric:lining-nums tabular-nums;margin-top:.15rem}
+.hv-card dd.sub{font-size:.76rem;line-height:1.35;color:var(--muted);margin-top:.2rem}
+.hv-card dd.sub em{font-style:normal}
+.hv-card em.over{color:var(--over)} .hv-card em.under{color:var(--good)}
+.hv-steps{margin-top:1rem}
+.hv-steps summary{margin-left:0}
+.hv-steps table.lg{min-width:0}
+.hv-steps .lg th:first-child,.hv-steps .lg td:first-child{padding-left:.6rem}
+.hv-steps .lg th:last-child,.hv-steps .lg td:last-child{padding-right:.6rem}
+.hv-actions{display:flex;justify-content:flex-end;align-items:center;gap:.75rem;margin-top:1rem}
+
+/* ── Batch form ── */
+.batch-dlg{width:min(36rem,calc(100vw - 24px));max-height:calc(100dvh - 24px);overflow:auto}
+.batch-dlg form{gap:.85rem}
+.batch-dlg fieldset{margin:0;padding:.9rem .9rem 1rem;border:1px solid var(--line);border-radius:6px;display:grid;gap:.75rem;min-width:0}
+.batch-dlg legend{padding:0 .4rem;font-family:var(--font-display);font-weight:600;font-size:1.1rem;color:var(--gold-light)}
+.batch-dlg .hint{margin:-.2rem 0 .2rem}
+
+@media (max-width:900px){
+  .hv-totals{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .hv-money{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media (max-width:560px){
+  .hv-top .plate{width:100%}
+  .hv-totals{gap:.5rem}
+  .hv-totals li{padding:.7rem .3rem}
+  .hv-totals b{font-size:1.2rem}
+  .hv-totals span{font-size:.56rem;letter-spacing:.1em}
+  .hv-flow,.hv-money{grid-template-columns:repeat(2,minmax(0,1fr));gap:.45rem}
+  .hv-flow > div::after{display:none}
+  .hv-card dd.num{font-size:1.15rem}
+  .hv-head .engraved{font-size:1.35rem}
+  .batch-dlg{padding:1.2rem .9rem 1rem}
+  .batch-dlg fieldset{padding:.75rem .7rem .85rem}
 }
