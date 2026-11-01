@@ -25,20 +25,26 @@
       <section class="sec sec--first" aria-labelledby="log-h">
         <div class="sec-head">
           <h2 class="engraved" id="log-h">Log an expense</h2>
-          <p>Record what was spent as it happens. It is written into your Excel file and counted against this month's expected costs below.</p>
+          <p>Record what was spent and how much work it paid for. Quantities give the real cost per acre, litre or meta, and processing costs can be linked to a harvest batch.</p>
         </div>
         <div class="two">
           <div class="form-sheet">
             <h3 class="engraved">New entry</h3>
+            <datalist id="units"><option value="acres"></option><option value="litres"></option><option value="barrels"></option><option value="meta"></option><option value="miraba"></option><option value="seedlings"></option><option value="days"></option><option value="kg"></option><option value="trips"></option><option value="people"></option></datalist>
             <form id="f" novalidate>
               <div class="row2">
                 <label for="f-date">Date<input id="f-date" type="date" required /></label>
                 <label for="f-amt">Amount (TZS)<input id="f-amt" type="text" inputmode="numeric" placeholder="e.g. 120,000" autocomplete="off" required /></label>
               </div>
               <label for="f-item">Expense<select id="f-item" required></select></label>
-              <div class="row2">
+              <div class="row2 row-keep">
+                <label for="f-qn">Quantity<input id="f-qn" type="text" inputmode="decimal" placeholder="e.g. 5" autocomplete="off" /></label>
+                <label for="f-unit">Unit<input id="f-unit" type="text" list="units" placeholder="acres, litres, meta…" autocomplete="off" /></label>
+              </div>
+              <p class="rate-hint" id="f-rate" aria-live="polite"></p>
+              <div class="row2 row-stack">
                 <label for="f-method">Paid by<select id="f-method"><option>CRDB transfer</option><option>Mobile money</option><option>Cash</option><option>Other</option></select></label>
-                <label for="f-qty">Quantity (optional)<input id="f-qty" type="text" placeholder="e.g. 5 acres, 20 L" autocomplete="off" /></label>
+                <label for="f-batch">Harvest batch<select id="f-batch"></select></label>
               </div>
               <label for="f-note">Note<textarea id="f-note" rows="2" placeholder="What it was for, who was paid"></textarea></label>
               <button class="plate" id="f-save" type="submit">Save entry</button>
@@ -74,6 +80,15 @@
         </div>
         <p class="xl-note" id="xl-note" role="status"></p>
       </section>
+      <section class="sec" aria-labelledby="hv-h">
+        <div class="sec-head">
+          <h2 class="engraved" id="hv-h">Harvests</h2>
+          <p>Each batch from cutting to sale: how many meta were cut, how much fibre came out, what was lost, what sold and for how much, set against the costs linked to it.</p>
+        </div>
+        <div class="hv-top"><button class="plate" id="hv-new" type="button">New harvest batch</button></div>
+        <ul class="hv-totals" id="hv-totals"></ul>
+        <div class="hv-list" id="hv-list"></div>
+      </section>
       <section class="certificate sec" id="forecast" aria-labelledby="sum-h">
         <div class="cert-head">
           <p class="script" id="sum-month"></p>
@@ -104,7 +119,7 @@
           <div class="ledger-title">
             <p class="script" id="det-script"></p>
             <h2 class="engraved" id="det-h">Expected against logged</h2>
-            <p>Typical amounts based on Oct 2024 – Sep 2026</p>
+            <p>Typical amounts based on Oct 2024 – Sep 2026. Where a quantity was logged, the real cost per unit is shown under the item.</p>
           </div>
           <details class="more" id="det-more" open>
             <summary id="det-sum">Line by line</summary>
@@ -118,7 +133,7 @@
         </div>
       </section>
       <dialog class="tut" id="tut" aria-labelledby="tut-title">
-        <p class="script" id="tut-count">Step 1 of 4</p>
+        <p class="script" id="tut-count">Step 1 of 5</p>
         <h2 class="engraved" id="tut-title"></h2>
         <p id="tut-body"></p>
         <div class="tut-dots" id="tut-dots" aria-hidden="true"></div>
@@ -128,6 +143,52 @@
           <button class="plate" id="tut-next" type="button">Next</button>
         </div>
         <button class="tut-close" id="tut-close" type="button" aria-label="Close">×</button>
+      </dialog>
+
+      <dialog class="tut batch-dlg" id="bd" aria-labelledby="bd-title">
+        <form id="bf" novalidate>
+          <p class="script" id="bd-kicker">New batch</p>
+          <h2 class="engraved" id="bd-title">Harvest batch</h2>
+          <p class="hint">Fill in what you know now and update the batch as it moves from cutting to sale.</p>
+          <fieldset>
+            <legend>Harvest</legend>
+            <div class="row2 row-keep">
+              <label for="b-start">Cutting started<input id="b-start" type="date" required /></label>
+              <label for="b-meta">Meta cut<input id="b-meta" type="text" inputmode="decimal" placeholder="e.g. 36" autocomplete="off" /></label>
+            </div>
+            <label for="b-block">Block or field<input id="b-block" type="text" placeholder="e.g. North block, 2021 planting" autocomplete="off" /></label>
+          </fieldset>
+          <fieldset>
+            <legend>Processing</legend>
+            <div class="row2 row-keep">
+              <label for="b-kg">Dry fibre produced (kg)<input id="b-kg" type="text" inputmode="decimal" placeholder="e.g. 540" autocomplete="off" /></label>
+              <label for="b-lost">Lost or rejected (kg)<input id="b-lost" type="text" inputmode="decimal" placeholder="e.g. 20" autocomplete="off" /></label>
+            </div>
+            <label for="b-why">Why it was lost<select id="b-why"><option value="">No loss / not known</option><option>Rain or poor drying</option><option>Rejected on grading</option><option>Spoiled leaves</option><option>Theft</option><option>Other</option></select></label>
+          </fieldset>
+          <fieldset>
+            <legend>Sale</legend>
+            <div class="row2 row-keep">
+              <label for="b-sold">Fibre sold (kg)<input id="b-sold" type="text" inputmode="decimal" placeholder="e.g. 500" autocomplete="off" /></label>
+              <label for="b-price">Price per kg (TZS)<input id="b-price" type="text" inputmode="decimal" placeholder="e.g. 2,300" autocomplete="off" /></label>
+            </div>
+            <div class="row2 row-keep">
+              <label for="b-buyer">Buyer<input id="b-buyer" type="text" autocomplete="off" /></label>
+              <label for="b-sdate">Sale date<input id="b-sdate" type="date" /></label>
+            </div>
+            <div class="row2 row-keep">
+              <label for="b-tow">Short fibre sold (kg)<input id="b-tow" type="text" inputmode="decimal" placeholder="biashi" autocomplete="off" /></label>
+              <label for="b-towp">Short fibre price per kg<input id="b-towp" type="text" inputmode="decimal" autocomplete="off" /></label>
+            </div>
+          </fieldset>
+          <label for="b-notes">Notes<textarea id="b-notes" rows="2" placeholder="Grade, weather, anything unusual"></textarea></label>
+          <p class="status" id="b-status" role="status"></p>
+          <div class="tut-actions">
+            <button class="ghost" id="b-cancel" type="button">Cancel</button>
+            <button class="plate" id="b-save" type="submit">Save batch</button>
+          </div>
+        </form>
+        <button class="tut-close" id="bd-close" type="button" aria-label="Close">×</button>
       </dialog>
 
       <footer>Damana Estate · expected figures are estimates and will sharpen as real spending is logged</footer>

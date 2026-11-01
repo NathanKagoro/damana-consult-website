@@ -113,7 +113,9 @@ The original JPEG photographs are in `public/` on the `main` branch.
 ## Estate accounts page
 
 - **Expected figures** come from `src/estate/items.json`: each regular farm cost with a typical amount, how often it occurs, an expected yearly total and the share of that total falling in each month. They were worked out from the estate's 2021–2026 cashbook. The log starts in October 2026, the month after the cashbook ends, so the calendar shows twelve months at a time from there and never shows the cashbook's months as empty.
-- **Logging** happens in the browser; there is no server. Entries are kept in the browser's storage and written into an `.xlsx` with three sheets: Logged expenses, By month, and Expected by month.
+- **Logging** happens in the browser; there is no server. Each expense can carry a quantity and unit (acres, litres, meta…), so the page shows the real cost per unit against the expected rate, and can be linked to a harvest batch.
+- **Harvest batches** record a harvest from cutting to sale: meta cut, dry fibre produced, fibre lost and why, fibre sold with price and buyer, and short fibre (*biashi*) sold. With the costs linked to it, each batch shows cost per meta and per kilo, loss rate, revenue, profit and break-even price, against the cashbook benchmarks (15 kg of fibre per meta; processing ≈ 43,700 TZS per meta).
+- Everything is kept in the browser's storage and written into an `.xlsx` with four sheets: Logged expenses, Harvest batches, By month, and Expected by month.
 - **Keeping the Excel file in step:** in Chrome or Edge on a computer, *Create new file* or *Open existing file* connects a workbook, and every entry saved or deleted afterwards is written straight into it. In other browsers, *Download* saves the workbook and *Open existing file* loads one back.
 - **On phones** the page is shorter: explanations are hidden, the calendar is a compact grid, and the line-by-line table starts folded. A *How to use* button opens a four-step guide that can jump to each part of the page.
 - The page uses the site's original theme (Cormorant Garamond and Inter, self-hosted through Fontsource) and SheetJS (`xlsx`) for the workbook.
